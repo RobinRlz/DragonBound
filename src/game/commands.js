@@ -861,12 +861,10 @@ module.exports = class Commands {
               self.gameserver.db.connection.getConnection().then((conn) => {
                 conn
                   .query(
-                    "UPDATE users SET gp = (gp + '" +
-                      data[2] +
-                      "') WHERE IdAcc='" +
-                      data[1] +
-                      "'",
-                    function (err, result) {
+                    "UPDATE users SET gp = gp + ? WHERE IdAcc = ?",
+                    [parseInt(data[2], 10) || 0, parseInt(data[1], 10) || 0]
+                  )
+                  .then(function () {
                       //self.gameserver.pushBroadcast(new Message.chatResponse(self.account, " '"+data[1]+"' GANASTE '"+ data[2]+"' DE ORO ", Types.CHAT_TYPE.SYSTEM));
                       self2.send([
                         17,
@@ -877,7 +875,7 @@ module.exports = class Commands {
                           self.account.player.game_id +
                           "</font>.<br><br>Thank You!",
                       ]);
-                      self2.player.gp += data[2];
+                      self2.player.gp += parseInt(data[2], 10) || 0;
                     }
                   )
                   .then((rows) => {
@@ -1213,12 +1211,10 @@ module.exports = class Commands {
               self.gameserver.db.connection.getConnection().then((conn) => {
                 conn
                   .query(
-                    "UPDATE users SET country = ('" +
-                      data[2] +
-                      "') WHERE game_id='" +
-                      data[1] +
-                      "'",
-                    function (err, result) {
+                    "UPDATE users SET country = ? WHERE game_id = ?",
+                    [String(data[2]), String(data[1])]
+                  )
+                  .then(function () {
                       self.account.send([
                         0,
                         "El usuario " + data[1] + " fue cambiado de Country!!",
@@ -1243,12 +1239,10 @@ module.exports = class Commands {
               self.gameserver.db.connection.getConnection().then((conn) => {
                 conn
                   .query(
-                    "UPDATE users SET `rank` = ('" +
-                      data[2] +
-                      "') WHERE IdAcc='" +
-                      data[1] +
-                      "'",
-                    function (err, result) {
+                    "UPDATE users SET `rank` = ? WHERE IdAcc = ?",
+                    [parseInt(data[2], 10) || 0, parseInt(data[1], 10) || 0]
+                  )
+                  .then(function () {
                       //self.gameserver.pushBroadcast(new Message.chatResponse(self.account, "El nivel de '"+data[1]+"' fue cambiado", Types.CHAT_TYPE.SYSTEM));
                       self2.send([
                         17,
@@ -1277,11 +1271,8 @@ module.exports = class Commands {
               self.gameserver.db.connection.getConnection().then((conn) => {
                 conn
                   .query(
-                    "UPDATE users SET gold = (gold + '" +
-                      data[2] +
-                      "') WHERE IdAcc='" +
-                      data[1] +
-                      "'"
+                    "UPDATE users SET gold = gold + ? WHERE IdAcc = ?",
+                    [parseInt(data[2], 10) || 0, parseInt(data[1], 10) || 0]
                   )
                   .then((rows) => {
                     //self.gameserver.pushBroadcast(new Message.chatResponse(self.account, " '"+data[1]+"' GANASTE '"+ data[2]+"' DE ORO ", Types.CHAT_TYPE.SYSTEM));
@@ -1295,7 +1286,7 @@ module.exports = class Commands {
                           self.account.player.game_id +
                           "</font>.<br><br>Thank You!",
                       ]);
-                      self2.player.gold += data[2];
+                      self2.player.gold += parseInt(data[2], 10) || 0;
                     }
                     conn.release();
                   });
@@ -1313,7 +1304,7 @@ module.exports = class Commands {
               //     conn.query("UPDATE users SET cash = (cash + '"+ data[2] +"') WHERE IdAcc='"+ data[1] +"'",function(err, result){
               //         //self.gameserver.pushBroadcast(new Message.chatResponse(self.account, " '"+data[1]+"' GANASTE '"+ data[2]+"' DE CASH ", Types.CHAT_TYPE.SYSTEM));
               // 		self2.send([17,"Received Cash! :)","You just received <font color='yellow'>"+data[2]+"</font> Cash from<br><font color='yellow'>"+self.account.player.game_id+"</font>.<br><br>Thank You!"]);
-              // 		self2.player.cash += data[2];
+              // 		self2.player.cash += parseInt(data[2], 10) || 0;
               //     }).then(rows => {
               //             conn.release();
               //         });
@@ -1321,11 +1312,8 @@ module.exports = class Commands {
               self.gameserver.db.connection.getConnection().then((conn) => {
                 conn
                   .query(
-                    "UPDATE users SET cash = (cash + '" +
-                      data[2] +
-                      "') WHERE IdAcc='" +
-                      data[1] +
-                      "'"
+                    "UPDATE users SET cash = cash + ? WHERE IdAcc = ?",
+                    [parseInt(data[2], 10) || 0, parseInt(data[1], 10) || 0]
                   )
                   .then((rows) => {
                     if (self2) {
@@ -1338,7 +1326,7 @@ module.exports = class Commands {
                           self.account.player.game_id +
                           "</font>.<br><br>Thank You!",
                       ]);
-                      self2.player.cash += data[2];
+                      self2.player.cash += parseInt(data[2], 10) || 0;
                     }
                     conn.release();
                   });
@@ -1353,8 +1341,10 @@ module.exports = class Commands {
               self.gameserver.db.connection.getConnection().then((conn) => {
                 conn
                   .query(
-                    "UPDATE users SET gm = 1 WHERE game_id='" + data[1] + "'",
-                    function (err, result) {
+                    "UPDATE users SET gm = 1 WHERE game_id = ?",
+                    [String(data[1])]
+                  )
+                  .then(function () {
                       self.account.send([
                         0,
                         "El usuario " + data[1] + " fue puesto GM!!",
@@ -1377,10 +1367,10 @@ module.exports = class Commands {
               self.gameserver.db.connection.getConnection().then((conn) => {
                 conn
                   .query(
-                    "UPDATE users SET `rank` = 0, gm = 0, cash = 30000, gold = 500000 WHERE game_id='" +
-                      data[1] +
-                      "'",
-                    function (err, result) {
+                    "UPDATE users SET `rank` = 0, gm = 0, cash = 30000, gold = 500000 WHERE game_id = ?",
+                    [String(data[1])]
+                  )
+                  .then(function () {
                       self.account.send([
                         0,
                         "" + data[1] + " fue degradado de GM.",
@@ -1403,10 +1393,10 @@ module.exports = class Commands {
               self.gameserver.db.connection.getConnection().then((conn) => {
                 conn
                   .query(
-                    "UPDATE users SET banned = 0 WHERE game_id='" +
-                      data[1] +
-                      "'",
-                    function (err, result) {
+                    "UPDATE users SET banned = 0 WHERE game_id = ?",
+                    [String(data[1])]
+                  )
+                  .then(function () {
                       self.account.send([0, "Usuario desbaneado!!", "", 6]);
                     }
                   )
@@ -5214,32 +5204,12 @@ module.exports = class Commands {
         }
         case "/password_cuenta": {
           if (self.account.player.rank === 31) {
-            if (data[1] !== null && data[1].length > 0) {
-              self.gameserver.db.connection.getConnection().then((conn) => {
-                conn
-                  .query(
-                    "SELECT Password FROM accounts WHERE Name='" +
-                      data[1] +
-                      "' ",
-                    function (err, result, fields) {
-                      console.log(result);
-                      self.account.send([
-                        0,
-                        "La contraseña del Usuario " +
-                          data[1] +
-                          " es ==> " +
-                          JSON.stringify(result) +
-                          "",
-                        "",
-                        6,
-                      ]);
-                    }
-                  )
-                  .then((rows) => {
-                    conn.release();
-                  });
-              });
-            }
+            self.account.send([
+              0,
+              "Comando desactivado: las contraseñas se guardan con hash y no se pueden consultar.",
+              "",
+              6,
+            ]);
           }
           break;
         }

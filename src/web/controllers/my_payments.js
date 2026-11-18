@@ -1,5 +1,6 @@
 var express = require('express'),
     router = express.Router();
+var { escapeHtml: esc } = require('../lib/html');
 
 var mysql = require('mysql');
 var Logger = require('../../game/lib/logger');
@@ -36,7 +37,7 @@ router.get('/', auth, csrfProtection, function (req, res) {
                         my_payments = rows5[0].length;
                         for (i = 0; i < rows_x3.length; i++) {//rows_x3[i].
                             texto_test += '<tr>';
-                            texto_test += '<td>'+rows_x3[i].Name+'</td>';
+                            texto_test += '<td>'+esc(rows_x3[i].Name)+'</td>';
                             texto_test += '<td>';
                             texto_test += '<nobr>';
                             texto_test += '<script>';

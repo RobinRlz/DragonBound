@@ -22,15 +22,21 @@ var options = {
 var MySQLStore = expressMysqlSession(session);
 var sessionStore = new MySQLStore(options);
 
+const ONE_DAY_MS = 24 * 60 * 60 * 1000;
+
 module.exports = () =>
   session({
     key: "sessionid",
     secret: config.SESSION.SECRET,
     store: sessionStore,
-    resave: true,
-    saveUninitialized: true,
+    // No guardar sesiones vacías de visitantes anónimos ni reescribir sin cambios.
+    resave: false,
+    saveUninitialized: false,
     cookie: {
-      secure: true,
-      maxAge: new Date(Date.now() + 100 * 1000 * 10),
+      httpOnly: true,
+      sameSite: "lax",
+      // "auto": Secure cuando la petición llega por HTTPS (detrás de un proxy hay que definir TRUST_PROXY).
+      secure: process.env.COOKIE_SECURE === "true" ? true : "auto",
+      maxAge: ONE_DAY_MS,
     },
   });

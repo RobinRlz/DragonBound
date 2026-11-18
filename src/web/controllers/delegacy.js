@@ -1,5 +1,6 @@
 var express = require('express'),
     router = express.Router();
+var { escapeHtml: esc } = require('../lib/html');
 
 var mysql = require('mysql');
 var Logger = require('../../game/lib/logger');
@@ -31,11 +32,11 @@ router.get('/guests', function (req, res) {
                                     texto_test += '<div class="caja">';
                                     texto_test += '<div class="memberbox">';
                                     if (rows_x1[i].photo_url !== '') {
-                                        texto_test += '<div class="memberphoto secundario" style="background-image: url('+"'"+rows_x1[i].photo_url+"'"+');"></div>';
+                                        texto_test += '<div class="memberphoto secundario" style="background-image: url('+"'"+esc(rows_x1[i].photo_url)+"'"+');"></div>';
                                     } else {
                                         texto_test += '<div class="memberphoto secundario" style="background-image: url('+"'/static/images/fb_boy.gif'"+');"></div>';
                                     }
-                                    texto_test += '<div class="membername secundario">'+rows_x1[i].game_id+'</div>';
+                                    texto_test += '<div class="membername secundario">'+esc(rows_x1[i].game_id)+'</div>';
                                     texto_test += '<div class="membersubtitle secundario '+rows_x1[i].check_ip+'">IP: '+rows_x1[i].IP+'</div>';
                                     texto_test += '</div>';
                                     texto_test += '</div>';

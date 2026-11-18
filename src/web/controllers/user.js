@@ -372,8 +372,7 @@ post_box.map((post)=>{
 
 for(const post in posts){
     let htmlToString = (data)=>{
-        let txt = data.toString();
-        return txt.replace(/</g, '&lt;').replace(/>/g, '&gt;');
+        return require('../lib/html').escapeHtml(data);
     }
     let session = req.session.acc_session;
     let post_select = posts[post];
@@ -388,7 +387,7 @@ for(const post in posts){
     <input type="hidden" name="CommentID" value="${COU.id}" />
     <div class="Comment${COU.date == Math.round(Date.now() / 1000) ? ' new':''}">
         <div class="CommentT">
-            <span class="emo"><span class="span_rank rank rank${COU.rank}"></span></span><span class="CommentName"><a class="name" href="/user/${COU.game_id}">${COU.game_id}</a>] </span>
+            <span class="emo"><span class="span_rank rank rank${COU.rank}"></span></span><span class="CommentName"><a class="name" href="/user/${encodeURIComponent(COU.game_id)}">${htmlToString(COU.game_id)}</a>] </span>
             <span class="" data-rank="${COU.rank}">${htmlToString(COU.text)}</span>
         </div>
         <div class="ShowOnHover">
@@ -405,7 +404,7 @@ for(const post in posts){
         <input type="hidden" name="csrfmiddlewaretoken" value="${session}" />
         <input type="hidden" name="PostID" value="${DOP.id}" />
         <div class="boxTitle${DOP.date == Math.round(Date.now() / 1000) ? ' new':''}">
-            <span class="PostTitleEmo"><span class="span_rank rank rank${AOP.rank}"></span></span> <a class="name" href="/user/${AOP.name}">${AOP.name}</a>
+            <span class="PostTitleEmo"><span class="span_rank rank rank${AOP.rank}"></span></span> <a class="name" href="/user/${encodeURIComponent(AOP.name)}">${htmlToString(AOP.name)}</a>
             <span class="PostTime"><script>TD(${DOP.date})</script></span>
             ${(rows[0].IdAcc === req.session.account_id || AOP.id === req.session.account_id) ? '<input type="submit" class="DeletePost glow_button" name="action" value="delete">':''}
         </div>

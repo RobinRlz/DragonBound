@@ -1813,6 +1813,14 @@ module.exports = class Account {
           return null;
         }
 
+        // Sin caracteres que permitan inyectar HTML en las páginas y alertas que muestran el nombre.
+        if (typeof _nname !== "string" || /[<>&"'`\\]/.test(_nname)) {
+          self.sendMessage(
+            new Message.alert2Response(Types.ALERT2_TYPES.NAME_BAD_CHAR, [])
+          );
+          return null;
+        }
+
         if (ignoreCase.startsWith(_nname, " ")) {
           self.sendMessage(
             new Message.alert2Response(Types.ALERT2_TYPES.NAME_BAD_CHAR, [])

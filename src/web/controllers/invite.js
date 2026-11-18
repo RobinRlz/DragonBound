@@ -5,6 +5,8 @@ var mysql = require("mysql");
 var Logger = require("../../game/lib/logger");
 var ignoreCase = require("ignore-case");
 var md5 = require("md5");
+var { hashPassword } = require("../lib/password");
+var { newSessionToken } = require("../lib/session");
 var constants = require("constants");
 var geoip = require("geoip-lite");
 
@@ -87,6 +89,11 @@ router.post("/bid", function (req, res) {
               var reg = /([^f:]+)/;
               let ip_result = reg.exec(req.connection.remoteAddress)[0];
 
+              if (typeof user !== "string" || !/^[\p{L}\p{N}_.\-]+$/u.test(user)) {
+                user = typeof user === "string" ? user : "";
+                error_text = "El nombre solo puede tener letras, números, _ . y -";
+                valid_enter = false;
+              }
               if (/\s/g.test(user) === true) {
                 error_text = "Nombre de usuario no puede contener espacios";
                 valid_enter = false;
@@ -139,15 +146,15 @@ router.post("/bid", function (req, res) {
                   .then(function (rows) {
                     req.db
                       .dontExitsUserByGameId(user)
-                      .then(function (rows1) {
+                      .then(async function (rows1) {
                         var validate = true;
                         var dt2 = {
                           Email: "",
                           Name: user,
-                          Password: password,
+                          Password: await hashPassword(password),
                           Username: user,
                           Salt: ":",
-                          Session: md5(user + ":" + gender),
+                          Session: newSessionToken(),
                           IsOnline: 0,
                           Birthday: new Date(),
                           IP: ip_result,

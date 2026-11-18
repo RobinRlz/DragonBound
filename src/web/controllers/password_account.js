@@ -21,15 +21,19 @@ router.post('/accounts/password/reset/', async function (req, res) {
 
 const enviarCorreo = (email)=>{
 	return new Promise((resolve,reject)=>{
+	 if (!process.env.SMTP_USER || !process.env.SMTP_PASS) {
+	    console.log("SMTP_USER/SMTP_PASS no configurados: no se envía el correo");
+	    return resolve(false);
+	 }
 	 let transporter = nodemailer.createTransport({
 	    service: 'gmail',
             auth: {
-                user: 'holamundo@gmail.com',
-                pass: 'hollamundo'
+                user: process.env.SMTP_USER,
+                pass: process.env.SMTP_PASS
             }
 	 });
 	var mailOptions = {
-	   from: 'holamundito@gmail.com',
+	   from: process.env.SMTP_USER,
             to: email,
             subject: 'Password reset on dragonbound.net',
             text: '[ES] Te hemos enviado un correo con las instrucciones de reseteo de tu contraseña al correo electrónico que nos has indicado.El correo tomará unas horas en ser enviado, por favor espere y revise su correo electrónico más tarde.'

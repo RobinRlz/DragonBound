@@ -5,6 +5,9 @@ var mysql = require('mysql');
 var Logger = require('../../game/lib/logger');
 var ignoreCase = require('ignore-case');
 var md5 = require('md5');
+var crypto = require('crypto');
+var { hashPassword } = require('../lib/password');
+var { newSessionToken, rotateAccountSession } = require('../lib/session');
 var constants = require('constants');
 var graph = require('fbgraph');
 var geoip = require('geoip-lite');
@@ -100,13 +103,13 @@ router.post('/', function (req, res) {
                 }
 
                 req.db.getAccountByFBId(id)
-                    .then(function (rows) {
+                    .then(async function (rows) {
                         var res0 = rows[0][0];
+                        res0.Session = await rotateAccountSession(req.db, res0.Id);
                         req.db.getUserByIdAcc(res0.Id)
                             .then(function (rows2) {
                                 var res1 = rows2[0][0];
-                                req.session.cookie.expires = false;
-                                req.session.cookie.maxAge = new Date(Date.now() + (60 * 1000 * 1440));
+                                req.session.cookie.maxAge = 60 * 1000 * 1440;
                                 req.session.account_id = res0.Id;
                                 req.session.rank = res1.rank;
                                 req.session.acc_session = res0.Session;
@@ -156,15 +159,17 @@ router.post('/', function (req, res) {
                                 }
                             });
                     })
-                    .catch(function (err) {
+                    .catch(async function (err) {
                         if (err) {} else {
+                            // Cuenta de Facebook: contraseña aleatoria (antes era md5(nombre:fbid), predecible).
+                            var fbPassword = await hashPassword(crypto.randomBytes(24).toString('hex'));
                             var dt2 = {
                                 Email: email,
                                 Name: name+'_'+id,
-                                Password: md5(name + ":fbid:" + id),
+                                Password: fbPassword,
                                 PinUser: CheckPinUser,
                                 Salt: ':fbid:',
-                                Session: md5(name + ":" + gender),
+                                Session: newSessionToken(),
                                 views: 0,
                                 IsOnline: 0,
                                 Birthday: birthday,
@@ -221,8 +226,7 @@ router.post('/', function (req, res) {
                                             };
                                             req.db.putAvatarUseFB(nxdi)
                                                 .then(function (rows4) {
-                                                    req.session.cookie.expires = false;
-                                                    req.session.cookie.maxAge = new Date(Date.now() + (60 * 1000 * 1440));
+                                                    req.session.cookie.maxAge = 60 * 1000 * 1440;
                                                     req.session.account_id = uid;
                                                     req.session.rank = datos.rank;
                                                     req.session.acc_session = dt2.Session;

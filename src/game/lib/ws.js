@@ -19,7 +19,7 @@ module.exports = class WS extends Server {
         this._app = express();
         this._app.set('env', 'production');
         this._app.disable('x-powered-by');
-        this._app.use(cookieParser('xgamedev'));
+        this._app.use(cookieParser(process.env.COOKIE_SECRET || require('crypto').randomBytes(32).toString('hex')));
         this._app.use("/", function(req, res) {
             res.send("hi");
         });
@@ -30,7 +30,9 @@ module.exports = class WS extends Server {
             Logger.normal('Listening on ' + st + " " + http.address().port);
         });
         this._wss = new WebSocketServer({
-            server: http
+            server: http,
+            // Los mensajes del cliente son pequeños (chat, jugadas); ws acepta 100 MiB por defecto.
+            maxPayload: 64 * 1024
         });
         this._wss.on('connection', function connection(ws,req) {
             self.server_qid=parseInt(req.url.split("/")[1]);

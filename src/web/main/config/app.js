@@ -12,6 +12,13 @@ const logger = loggerFactory.getLogger("DragonApp");
 const setupApp = async () => {
   const app = express();
 
+  // Detrás de un proxy inverso (nginx, Cloudflare...) define TRUST_PROXY=1 (nº de proxies) para que
+  // req.ip y la cookie Secure usen los datos reales del cliente.
+  if (process.env.TRUST_PROXY) {
+    const tp = process.env.TRUST_PROXY;
+    app.set("trust proxy", /^\d+$/.test(tp) ? Number(tp) : tp === "true" ? true : tp);
+  }
+
   logger.log("Setting up app");
   const controllers = await setupControllers();
   logger.log("Setting controllers")

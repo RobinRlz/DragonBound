@@ -87,7 +87,7 @@
             <a href="/settings">Settings</a> | 
             <a href="/logout?next=/{{guild}}/{{guild}}">Logout</a>
             {{else}}
-            <a href="/login?next=/guild/{{{guild}}}/shop">Login</a>
+            <a href="/login?next=/guild/{{guild}}/shop">Login</a>
             {{/if}}
         </div>
     </div>
@@ -129,11 +129,11 @@
                             </tr>
                             <tr>
                                 <td>Tournament Points</td>
-                                <td>{{{points}}}</td>
+                                <td>{{points}}</td>
                             </tr>
                             <tr>
                                 <td>Guild Coins</td>
-                                <td><a href="/guild/{{guild}}/shop">{{{guild_coins}}}<button style="margin-left: 10px">Guild Shop</button></a></td>
+                                <td><a href="/guild/{{guild}}/shop">{{guild_coins}}<button style="margin-left: 10px">Guild Shop</button></a></td>
                             </tr>
                         </table>
                         {{{coins_images}}}
@@ -151,7 +151,7 @@
                 </div>
                 <div class="Box">
                     <div class="boxTitle">About</div>
-                    <div class="boxBody" style="word-break:break-word">{{{about}}}</div>
+                    <div class="boxBody" style="word-break:break-word">{{about}}</div>
                 </div>
                 <div class="Box">
                     <div class="boxTitle">Members / Guild Ranking</div>

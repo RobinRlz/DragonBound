@@ -1355,7 +1355,7 @@ module.exports = class DataBase {
         .getUserByIdAccGame(id)
         .then(function (rows0) {
           let rows = rows0[0];
-          if (rows[0].Session === session) {
+          if (typeof session === "string" && session.length >= 16 && rows[0].Session === session) {
             data.user_id = rows[0].IdAcc;
             data.reg_id = rows[0].Id;
             data.game_id = rows[0].game_id;

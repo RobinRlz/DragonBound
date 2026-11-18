@@ -6,6 +6,9 @@ var mysql = require("mysql2/promise");
 var Logger = require("../../game/lib/logger");
 var ignoreCase = require("ignore-case");
 var md5 = require("md5");
+var { verifyPassword, hashPassword } = require("../lib/password");
+var { loginFailures } = require("../lib/limits");
+var { newSessionToken, rotateAccountSession } = require("../lib/session");
 var geoip = require("geoip-lite");
 var ip_regs = {};
 var ip_logins = {};
@@ -698,12 +701,12 @@ router.post("/ajaxLogin", function (req, res) {
         }
     }*/
 
-  var ip = req.headers["x-real-ip"] || req.connection.remoteAddress;
+  var ip = req.ip;
   //var ip = req.headers['x-forwarded-for'] || req.connection.remoteAddress || req.socket.remoteAddress || (req.connection.socket ? req.connection.socket.remoteAddress : null);
   var reg = /([^f:]+)/;
   let ip_result = reg.exec(req.connection.remoteAddress)[0];
 
-  var computer_ip = req.headers["x-real-ip"] || req.connection.remoteAddress;
+  var computer_ip = req.ip;
   var my_player_country = req.body.my_player_country;
 
   /*if (ip_result !== '200.109.223.57') {
@@ -730,6 +733,11 @@ router.post("/ajaxLogin", function (req, res) {
   }
   var user = req.body.u;
   var password = req.body.p;
+  var loginKey = String(user).toLowerCase();
+  if (loginFailures.isBlocked(loginKey)) {
+    res.send(JSON.stringify(["Demasiados intentos fallidos. Espera unos minutos."]));
+    return null;
+  }
   Logger.log("'" + user + "' " + req.body.r);
   if (
     Buffer.byteLength(user, "utf8") < 2 ||
@@ -749,18 +757,25 @@ router.post("/ajaxLogin", function (req, res) {
           } else {
             req.db
               .getAccountByUsername(user)
-              .then(function (rows) {
+              .then(async function (rows) {
                 var data = rows[0][0];
-                if (data.Password === password) {
+                var check = await verifyPassword(password, data.Password);
+                if (check.ok) {
+                  loginFailures.reset(loginKey);
+                  // Token de juego nuevo en cada login (antes: md5 predecible, y no cambiaba nunca).
+                  data.Session = await rotateAccountSession(req.db, data.Id);
+                  if (check.legacy) {
+                    // Migra la contraseña antigua (texto plano) a hash.
+                    await req.db
+                      .updatePasswordByNameId(await hashPassword(password), data.Id)
+                      .catch(function () {});
+                  }
                   req.db
                     .getUserByIdAcc(data.Id)
                     .then(function (rows2) {
                       if (rows2[0].length > 0) {
                         var res1 = rows2[0][0];
-                        req.session.cookie.expires = false;
-                        req.session.cookie.maxAge = new Date(
-                          Date.now() + 60 * 1000 * 1440
-                        );
+                        req.session.cookie.maxAge = 60 * 1000 * 1440;
                         req.session.account_id = data.Id;
                         req.session.rank = res1.rank;
                         req.session.acc_session = data.Session;
@@ -838,18 +853,13 @@ router.post("/ajaxLogin", function (req, res) {
                       res.send(JSON.stringify([0]));
                     });
                 } else {
-                  Logger.log(
-                    "'" +
-                      user +
-                      "' password error " +
-                      data.Password +
-                      " " +
-                      password
-                  );
+                  loginFailures.fail(loginKey);
+                  Logger.log("'" + user + "' password error");
                   res.send(JSON.stringify([0]));
                 }
               })
               .catch(function (err) {
+                loginFailures.fail(loginKey);
                 res.send(JSON.stringify([0]));
               });
           }
@@ -867,7 +877,7 @@ router.post("/ajaxRegister", function (req, res) {
             valid_enter = true;
         }
     }*/
-  var ip = req.headers["x-real-ip"] || req.connection.remoteAddress;
+  var ip = req.ip;
   if (ip_regs[ip] == undefined) {
     ip_regs[ip] = { baned: false, actions: 0 };
   } else {
@@ -880,7 +890,7 @@ router.post("/ajaxRegister", function (req, res) {
   var reg = /([^f:]+)/;
   let ip_result = reg.exec(req.connection.remoteAddress)[0];
 
-  var computer_ip = req.headers["x-real-ip"] || req.connection.remoteAddress;
+  var computer_ip = req.ip;
   var my_player_country = req.body.my_player_country;
 
   /*if (computer_ip !== '200.109.223.57') {
@@ -898,6 +908,10 @@ router.post("/ajaxRegister", function (req, res) {
     return null;
   }
   var user = req.body.name;
+  if (typeof user !== "string" || !/^[\p{L}\p{N}_.\-]+$/u.test(user)) {
+    res.send(JSON.stringify(["El nombre solo puede tener letras, números, _ . y -"]));
+    return null;
+  }
   if (/\s/g.test(user) === true) {
     res.send(JSON.stringify(["Nombre de usuario no puede contener espacios"]));
     return null;
@@ -912,7 +926,7 @@ router.post("/ajaxRegister", function (req, res) {
   }
   /* =========Pin User========= */
   var CheckPinUser = req.body.pinuser;
-  Logger.info("Pin User: " + CheckPinUser);
+  // (el PIN ya no se registra en los logs)
   if (/\s/g.test(CheckPinUser) === true) {
     res.send(JSON.stringify(["Pin User no puede contener espacios"]));
     return null;
@@ -942,6 +956,10 @@ router.post("/ajaxRegister", function (req, res) {
   }
   /*var email = req.body.email;*/
   var password = req.body.password;
+  if (typeof password !== "string" || password.length < 1 || password.length > 128) {
+    res.send(JSON.stringify(["La contraseña no es válida"]));
+    return null;
+  }
   var gender = req.body.gender;
   var validate = false;
   /*Logger.info('Email: '+email);
@@ -984,16 +1002,16 @@ router.post("/ajaxRegister", function (req, res) {
               .then(function (rows) {
                 req.db
                   .dontExitsUserByGameId(user)
-                  .then(function (rows1) {
+                  .then(async function (rows1) {
                     var validate = true;
                     var dt2 = {
                       Email: "",
                       Name: user,
-                      Password: password,
+                      Password: await hashPassword(password),
                       PinUser: CheckPinUser,
                       Username: user,
                       Salt: ":",
-                      Session: md5(user + ":" + gender),
+                      Session: newSessionToken(),
                       views: 0,
                       IsOnline: 0,
                       Birthday: new Date(),
@@ -1060,10 +1078,7 @@ router.post("/ajaxRegister", function (req, res) {
                             req.db
                               .putAvatarUseFB(nxdi)
                               .then(function (rows4) {
-                                req.session.cookie.expires = false;
-                                req.session.cookie.maxAge = new Date(
-                                  Date.now() + 60 * 1000 * 1440
-                                );
+                                req.session.cookie.maxAge = 60 * 1000 * 1440;
                                 req.session.account_id = uid;
                                 req.session.rank = datos.rank;
                                 req.session.acc_session = dt2.Session;

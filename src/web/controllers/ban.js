@@ -1,5 +1,6 @@
 var express = require('express'),
     router = express.Router();
+var { escapeHtml: esc } = require('../lib/html');
 
 var mysql = require('mysql');
 var Logger = require('../../game/lib/logger');
@@ -47,7 +48,7 @@ router.get('/', function (req, res) {
                     } else {
                         date_state = '<td class="days">' + DateBan(parseInt(rows_x2[i].date)) + '</td>';
                     }
-                    texto_test += '<tr><td>' + parseInt( i + 1 ) + '</td><td>' + rows_x2[i].game_id + '</td><td>' + rows_x2[i].IdAcc + '</td><td>' + rows_x2[i].razon + '</td>' + date_state + '<td><img class="img_rank" src="/static/banned_ranks/' + rows_x2[i].rank + '.gif" ></td></tr>';
+                    texto_test += '<tr><td>' + parseInt( i + 1 ) + '</td><td>' + esc(rows_x2[i].game_id) + '</td><td>' + rows_x2[i].IdAcc + '</td><td>' + esc(rows_x2[i].razon) + '</td>' + date_state + '<td><img class="img_rank" src="/static/banned_ranks/' + rows_x2[i].rank + '.gif" ></td></tr>';
                 }
                 res.render('desban', {
                     baneados: texto_test

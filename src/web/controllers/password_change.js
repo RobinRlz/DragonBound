@@ -5,6 +5,7 @@ var mysql = require('mysql');
 var Logger = require('../../game/lib/logger');
 var ignoreCase = require('ignore-case');
 var md5 = require('md5');
+var { hashPassword, verifyPassword } = require('../lib/password');
 var constants = require('constants');
 var first_error = '';
 
@@ -19,7 +20,6 @@ router.get('/', auth, csrfProtection, function (req, res) {
     req.db.getUserByGameId(acc_id)
         .then(function (resb) {
         var rows = resb[0];
-        Logger.info('My Pasword: '+rows[0].Password);
         Logger.info('The password change web page is being used');
         res.render('password', {
             error_principal: '',
@@ -33,7 +33,7 @@ router.get('/', auth, csrfProtection, function (req, res) {
     });
 });
 
-router.post('/', function (req, res) {
+router.post('/', auth, function (req, res) {
     //var password_change = 'Anonymo';
     var acc_id = req.session.account_id;
     var game_id = req.session.game_id;
@@ -44,11 +44,10 @@ router.post('/', function (req, res) {
     var second_mistake = '';
     var third_mistake = '';
     req.db.getUserByGameId(game_id)
-        .then(function (resb) {
+        .then(async function (resb) {
         var rows = resb[0];
-        Logger.info('#2 My Pasword: '+rows[0].Password);
-        var password_change = rows[0].Password;
-        if (password_old !== password_change) {
+        var old_check = await verifyPassword(password_old, rows[0].Password);
+        if (!old_check.ok) {
             cont = false;
             second_mistake = '<ul class="errorlist"><li>Your old password was entered incorrectly. Please enter it again.</li></ul>';
         }
@@ -90,9 +89,9 @@ router.post('/', function (req, res) {
         
         if (cont) {
             try {
-                req.db.updatePasswordByNameId(password_new1, acc_id)
+                req.db.updatePasswordByNameId(await hashPassword(password_new1), acc_id)
                     .then(function (resb) {
-                    Logger.info('El User: '+game_id+' Cambio su contraseña: '+password_new1);
+                    Logger.info('El User: '+game_id+' cambió su contraseña');
                     res.redirect('/accounts/password/change/done');
                 });
             } catch (e) {

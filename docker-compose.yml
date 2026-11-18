@@ -4,12 +4,11 @@ services:
     image: mysql:8.0
     container_name: mysql_dragonbound
     environment:
-      MYSQL_ROOT_PASSWORD: rootpassword
-      MYSQL_DATABASE: dragonbound
-      MYSQL_USER: myuser
-      MYSQL_PASSWORD: mypassword
+      MYSQL_ROOT_PASSWORD: ${DB_PASSWORD:?Define DB_PASSWORD en .env}
+      MYSQL_DATABASE: ${DB_DATABASE:-dragonbound}
     ports:
-      - "3306:3306"
+      # Solo accesible desde esta máquina (antes: 0.0.0.0)
+      - "127.0.0.1:3306:3306"
     volumes:
       - mysql_data:/var/lib/mysql
       - ./database/dragonbound.sql:/docker-entrypoint-initdb.d/init.sql
@@ -20,6 +19,7 @@ services:
       context: .
       dockerfile: game.Dockerfile
     container_name: game_dragonbound
+    env_file: .env
     volumes:
       - ./src/game:/app/src/game
     ports:
@@ -33,6 +33,7 @@ services:
       context: .
       dockerfile: web.Dockerfile
     container_name: web_dragonbound
+    env_file: .env
     volumes:
       - ./src/web:/app/src/web
     ports:

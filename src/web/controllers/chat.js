@@ -1,6 +1,7 @@
 //SELECT c.user_id, c.reseller_sms, c.date_sms, u.IdAcc, u.game_id, u.rank, u.photo_url, u.CashCharger FROM chat_reseller c INNER JOIN users u ON c.user_id = u.IdAcc
 var express = require('express'),
     router = express.Router();
+var { escapeHtml: esc } = require('../lib/html');
 
 var mysql = require('mysql');
 var Logger = require('../../game/lib/logger');
@@ -44,17 +45,17 @@ router.get('/', auth, csrfProtection, function (req, res) {
                     texto_test += '<div class="user_comment">';
                     if (isNaN(rows_x1[i].photo_url)) {
                         if (rows_x1[i].photo_url.length > 0) {
-                            texto_test += '<img class="img_user" src="'+rows_x1[i].photo_url+'">';
+                            texto_test += '<img class="img_user" src="'+esc(rows_x1[i].photo_url)+'">';
                         } else {
                             texto_test += '<img class="img_user" src="/static/images/fb_boy.gif">';
                         }
                     } else if (rows_x1[i].photo_url === "") {
                         texto_test += '<img class="img_user" src="/static/images/fb_boy.gif">';
                     } else {
-                        texto_test += '<img class="img_user" src="//graph.facebook.com/v2.2/'+rows_x1[i].photo_url+'/picture?type=large">';
+                        texto_test += '<img class="img_user" src="//graph.facebook.com/v2.2/'+encodeURIComponent(rows_x1[i].photo_url)+'/picture?type=large">';
                     }
-                    texto_test += '<span class="name_user">'+rows_x1[i].game_id+': </span>';
-                    texto_test += '<span class="comment_user">'+rows_x1[i].reseller_sms+'</span>';
+                    texto_test += '<span class="name_user">'+esc(rows_x1[i].game_id)+': </span>';
+                    texto_test += '<span class="comment_user">'+esc(rows_x1[i].reseller_sms)+'</span>';
                     texto_test += '<span title="'+getDateTime(parseInt(rows_x1[i].date_sms))+'" class="time_chat">'+getDateHour(parseInt(rows_x1[i].date_sms))+'</span>';
                     texto_test += '</div>';
                     //texto_test += '';

@@ -1,5 +1,6 @@
 var express = require('express'),
     router = express.Router();
+var { escapeHtml: esc } = require('../lib/html');
 
 var mysql = require('mysql');
 var Logger = require('../../game/lib/logger');
@@ -63,7 +64,7 @@ router.get('/:game_id', function (req, res) {
                     else
                         texto_test += '<tr>';
                     texto_test += '<td class="center">' + parseInt( i + 1 ) + '</td>';
-                    texto_test += '<td style="white-space: nowrap"><span class="span_rank rank rank'+rows[i].rank+'"></span> <a class="name" href="/user/'+rows[i].game_id+'">'+rows[i].game_id+'</a></td>';
+                    texto_test += '<td style="white-space: nowrap"><span class="span_rank rank rank'+rows[i].rank+'"></span> <a class="name" href="/user/'+encodeURIComponent(rows[i].game_id)+'">'+esc(rows[i].game_id)+'</a></td>';
                     texto_test += '<td class="center '+stylergender+'">'+gender+'</td>';
                     texto_test += '<td class="right">'+Commatize(rows[i].gp)+'</td>';
                     texto_test += '<td class="center nowarp">';
@@ -83,7 +84,7 @@ router.get('/:game_id', function (req, res) {
                             let res00 = rows4[0];
                             var ix2;
                             for (i = 0; i < res00.length; i++) {
-                                coins_images += '<img src="'+res00[i].coin_img+'">';
+                                coins_images += '<img src="'+esc(res00[i].coin_img)+'">';
                             }
                             res.render('clan', {
                                 guild: rows[0].Name,

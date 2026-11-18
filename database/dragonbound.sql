@@ -27,7 +27,7 @@ CREATE TABLE `accounts` (
   `Id` int(11) NOT NULL,
   `Email` varchar(120) DEFAULT NULL,
   `Name` varchar(120) DEFAULT NULL,
-  `Password` varchar(45) DEFAULT NULL,
+  `Password` varchar(255) DEFAULT NULL,
   `PinUser` int(5) NOT NULL,
   `Salt` varchar(10) DEFAULT NULL,
   `Session` varchar(45) DEFAULT NULL,
@@ -40657,10 +40657,10 @@ CREATE TABLE `user_avatars` (
   `expire` datetime DEFAULT NULL,
   `is_cash` int(2) DEFAULT 0,
   `is_gift` int(2) DEFAULT 0,
-  `gift_sent_by` int(10) NOT NULL,
+  `gift_sent_by` int(10) NOT NULL DEFAULT 0,
   `amount` int(11) DEFAULT 0,
   `expire_time` bigint(40) DEFAULT 0,
-  `date_ava_time` bigint(50) NOT NULL,
+  `date_ava_time` bigint(50) NOT NULL DEFAULT 0,
   `remove_ava` int(10) NOT NULL DEFAULT 0
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
