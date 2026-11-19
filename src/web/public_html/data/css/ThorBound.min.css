@@ -15242,12 +15242,16 @@ img.emoji {
     height: 0
 }
 
-#shopFilterBar select {
+.shopSeg {
     position: absolute;
     top: 3px;
-    width: 128px;
-    font-size: 11px;
-    padding: 1px 2px
+    display: flex;
+    height: 22px;
+    border: 2px solid #0b2347;
+    border-radius: 7px;
+    overflow: hidden;
+    background: #16315f;
+    box-shadow: 0 0 0 1px rgba(255,255,255,.45),0 2px 3px rgba(0,0,0,.5)
 }
 
 #shopFilterCurrency {
@@ -15255,9 +15259,84 @@ img.emoji {
 }
 
 #shopFilterSort {
-    left: 650px
+    left: 653px
 }
 
-#shopFilterBar select:disabled {
-    opacity: .55
+.shopSeg.disabled {
+    opacity: .5;
+    pointer-events: none
+}
+
+.shopSegBtn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 4px;
+    min-width: 42px;
+    padding: 0 8px;
+    font-size: 11px;
+    font-weight: 800;
+    line-height: 18px;
+    color: #e4efff;
+    cursor: pointer;
+    background: linear-gradient(#4a79c2,#2a4d89 52%,#1b3768);
+    border-left: 1px solid rgba(255,255,255,.22);
+    text-shadow: -1px 0 2px #000,0 1px 2px #000,1px 0 2px #000,0 -1px 2px #000
+}
+
+.shopSegBtn:first-child {
+    border-left: 0
+}
+
+.shopSegBtn:hover {
+    filter: brightness(1.18)
+}
+
+.shopSegBtn b {
+    font-size: 8px;
+    line-height: 18px
+}
+
+/* Botón activo: cada moneda con su color del juego (Cash azul, Oro dorado) */
+.shopSegBtn.active {
+    color: #17335f;
+    background: linear-gradient(#ffffff,#cfe2fa 55%,#a9c8ee);
+    text-shadow: 0 1px 0 rgba(255,255,255,.7)
+}
+
+.shopSegBtn[data-value="c"].active {
+    color: #083863;
+    background: linear-gradient(#d3ebff,#8bc2ee 55%,#4f9be0)
+}
+
+.shopSegBtn[data-value="g"].active {
+    color: #5a3d05;
+    background: linear-gradient(#fff0b8,#ffd273 55%,#e9a62b);
+    text-shadow: 0 1px 0 rgba(255,255,255,.6)
+}
+
+#shopFilterSort .shopSegBtn.active {
+    color: #17335f;
+    background: linear-gradient(#ffffff,#cfe2fa 55%,#a9c8ee)
+}
+
+.shopIcoCash,.shopIcoGold {
+    display: inline-block;
+    width: 9px;
+    height: 9px;
+    flex: none
+}
+
+.shopIcoCash {
+    background: linear-gradient(135deg,#e6f5ff,#4aa0ea);
+    border: 1px solid #083863;
+    transform: rotate(45deg) scale(.85)
+}
+
+.shopIcoGold {
+    width: 11px;
+    height: 11px;
+    border-radius: 50%;
+    border: 1px solid #634910;
+    background: radial-gradient(circle at 35% 30%,#fff3b8,#f5b81f 55%,#b07a0a)
 }

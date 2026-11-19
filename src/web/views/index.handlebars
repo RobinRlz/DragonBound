@@ -21,7 +21,7 @@
         console.log('gaa')
         var d = document.getElementsByTagName('script'),
           _0x539ex2 = d[d.length - 1].getAttribute('v'),
-          _arnulfover = '11',
+          _arnulfover = '12',
           _0x539ex3 = 'onreadyst',
           _0x539ex4 = 'fre',
           _0x539ex5 = 'al',
@@ -107,7 +107,7 @@
       })()
     </script>
     <!--<link rel="stylesheet" id="DragonStyle" href="/static/css/ThorBound.min.css?13211" />!-->
-    <link rel="stylesheet" href="/static/css/ThorBound.min.css?12">
+    <link rel="stylesheet" href="/static/css/ThorBound.min.css?13">
     <meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1, maximum-scale=1, user-scalable=no">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black">
@@ -1618,16 +1618,15 @@
         </div>
         <div id="shopPages" class="whiteShadow"></div>
         <div id="shopFilterBar" class="NoSelect">
-          <select id="shopFilterCurrency" title="Mostrar avatares de cash, de oro o todos">
-            <option value="a">Ver: todo</option>
-            <option value="c">Solo Cash</option>
-            <option value="g">Solo Oro</option>
-          </select>
-          <select id="shopFilterSort" disabled title="Elige Cash u Oro para ordenar por precio">
-            <option value="n">Orden: normal</option>
-            <option value="a">Menor precio primero</option>
-            <option value="d">Mayor precio primero</option>
-          </select>
+          <div id="shopFilterCurrency" class="shopSeg">
+            <div class="shopSegBtn active" data-value="a" title="Mostrar todos los avatares"><span>Todo</span></div>
+            <div class="shopSegBtn" data-value="c" title="Solo avatares de Cash"><i class="shopIcoCash"></i><span>Cash</span></div>
+            <div class="shopSegBtn" data-value="g" title="Solo avatares de Oro"><i class="shopIcoGold"></i><span>Oro</span></div>
+          </div>
+          <div id="shopFilterSort" class="shopSeg disabled">
+            <div class="shopSegBtn" data-value="a" title="Menor precio primero"><b>&#9650;</b><span>Menor</span></div>
+            <div class="shopSegBtn" data-value="d" title="Mayor precio primero"><b>&#9660;</b><span>Mayor</span></div>
+          </div>
         </div>
         <div id="buttonShopPrev" class="opacity_button NoSelect shopButton">
           <div class="Alt">← / ↑</div>

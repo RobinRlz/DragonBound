@@ -47487,19 +47487,22 @@
           a.myPlayerInfo.rank
         );
       });
-      function ShopApplyPriceFilter() {
-        var currency = $("#shopFilterCurrency").val(),
-          sort = "a" == currency ? "n" : $("#shopFilterSort").val();
+      function ShopApplyPriceFilter(currency, sort) {
         // Sin moneda elegida no se puede ordenar por precio (cash y oro no son comparables)
-        $("#shopFilterSort").prop("disabled", "a" == currency);
-        "a" == currency && $("#shopFilterSort").val("n");
+        "a" == currency && (sort = "n");
         window.shopFilter = {
           currency: currency,
           sort: sort,
         };
+        $("#shopFilterCurrency .shopSegBtn").each(function () {
+          $(this).toggleClass("active", $(this).data("value") == currency);
+        });
+        $("#shopFilterSort").toggleClass("disabled", "a" == currency);
+        $("#shopFilterSort .shopSegBtn").each(function () {
+          $(this).toggleClass("active", $(this).data("value") == sort);
+        });
         a.shop_cache = {};
         g_number_of_pages = [];
-        AudioPlay(AUDIO_BUTTON_SELECT2);
         ShopSetPage(
           void 0 === g_current_shop_type ? AVATAR_TYPE_HEAD : g_current_shop_type,
           0,
@@ -47507,9 +47510,19 @@
           a.myPlayerInfo.rank
         );
       }
-      $("#shopFilterCurrency, #shopFilterSort").on("change", ShopApplyPriceFilter);
-      $("#shopFilterBar").on("keydown keyup", function (a) {
-        a.stopPropagation();
+      $("#shopFilterCurrency .shopSegBtn").click(function () {
+        AudioPlay(AUDIO_BUTTON_SELECT2);
+        ShopApplyPriceFilter($(this).data("value"), "n");
+      });
+      $("#shopFilterSort .shopSegBtn").click(function () {
+        var f = window.shopFilter || {
+            currency: "a",
+            sort: "n",
+          },
+          v = $(this).data("value");
+        AudioPlay(AUDIO_BUTTON_SELECT2);
+        // Pulsar otra vez el botón activo vuelve al orden normal
+        ShopApplyPriceFilter(f.currency, f.sort == v ? "n" : v);
       });
       $("#buttonShopNext").click(function () {
         AudioPlay(AUDIO_BUTTON_SELECT2);
