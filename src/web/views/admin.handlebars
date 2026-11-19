@@ -236,6 +236,37 @@
           </div>
         </div>
 
+        <div class="card">
+          <h2>Móvil favorito (modo Random)</h2>
+          <div class="current" style="color:var(--muted);font-size:13px;margin-bottom:10px">Actual: <strong style="color:var(--text)">{{fav_text}}</strong></div>
+          <div class="field" style="margin-bottom:12px">
+            <label class="title" for="favmode">Qué hacer</label>
+            <select id="favmode" name="favmode" style="width:100%">
+              <option value="keep">No cambiar</option>
+              <option value="custom">Usar los móviles marcados</option>
+              <option value="none">Ninguno (Random normal)</option>
+              <option value="default">Por defecto (valor del servidor)</option>
+            </select>
+          </div>
+          <div class="grid" style="grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:8px">
+            {{#each fav_choices}}
+            <label class="field" style="display:flex;align-items:center;gap:8px;padding:8px 10px;cursor:pointer">
+              <input type="checkbox" class="favbox" name="favmobile" value="{{id}}" {{#if checked}}checked{{/if}}>
+              <span>{{name}}</span>
+            </label>
+            {{/each}}
+          </div>
+          <p class="hint">Con «Random», al empezar la partida este jugador recibe siempre uno de los móviles marcados (al azar entre ellos). Solo se aplica con la opción «Usar los móviles marcados». Los cambios llegan al juego en unos segundos.</p>
+        </div>
+        <script>
+          (function () {
+            var mode = document.getElementById("favmode");
+            [].forEach.call(document.querySelectorAll(".favbox"), function (box) {
+              box.addEventListener("change", function () { mode.value = "custom"; });
+            });
+          })();
+        </script>
+
         <div class="actions">
           <button type="submit">Guardar cambios</button>
           <a class="btn secondary" href="/admin">Volver a la búsqueda</a>

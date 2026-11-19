@@ -40040,7 +40040,8 @@ CREATE TABLE `users` (
   `ranking_semanal` int(10) NOT NULL,
   `lucky_egg_sec_left` varchar(500) DEFAULT '',
   `electrico` int(10) DEFAULT NULL,
-  `lucky_egg` varchar(30) DEFAULT '0'
+  `lucky_egg` varchar(30) DEFAULT '0',
+  `favorite_mobiles` varchar(60) DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 --

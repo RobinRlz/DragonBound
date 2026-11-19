@@ -37,6 +37,30 @@ function isAdminAccount(id, rank) {
   return rank === ADMIN_RANK || ADMIN_IDS.indexOf(id) !== -1;
 }
 
+// ---- Móvil favorito para "Random" (se guarda en users.favorite_mobiles; el servidor de juego lo lee)
+// NULL = valor por defecto del .env, 'none' = sin favorito, '8,10' = lista de ids de móvil.
+var FAV_CHOICES = [
+  [0, "Armor"], [1, "Ice"], [2, "Aduka"], [3, "Lightning"], [4, "Bigfoot"], [5, "J.D"], [6, "A.Sate"],
+  [8, "Knight (unicornio)"], [10, "Barney (dragón)"], [11, "Nak"], [12, "Trico"], [13, "Mage"],
+  [14, "Turtle"], [15, "Boomer"],
+];
+var FAV_NAMES = {};
+FAV_CHOICES.forEach(function (c) { FAV_NAMES[c[0]] = c[1]; });
+
+function parseFav(value) {
+  if (value === null || value === undefined) return { mode: "default", ids: [] };
+  if (value === "none") return { mode: "none", ids: [] };
+  var ids = String(value).split(",").map(function (v) { return parseInt(v, 10); })
+    .filter(function (v) { return FAV_NAMES[v] !== undefined; });
+  return { mode: "custom", ids: ids };
+}
+
+function favText(fav) {
+  if (fav.mode === "default") return "por defecto (según el .env del servidor)";
+  if (fav.mode === "none" || fav.ids.length === 0) return "ninguno";
+  return fav.ids.map(function (id) { return FAV_NAMES[id]; }).join(", ");
+}
+
 // ---- Niveles según GP (mismos umbrales que src/game/account.js y src/ranking/rankingscript.js)
 // Niveles 0-11: umbral fijo de GP. Niveles 12-24: dependen del puesto en el ranking de GP
 // (Silver Dragon = el nº 1, Red Dragon = los 4 siguientes, Blue Dragon = los 16 siguientes, etc.).
@@ -146,7 +170,7 @@ function mapUser(u) {
 }
 
 var USER_SELECT =
-  "SELECT u.IdAcc, u.game_id, u.`rank`, u.gm, u.cash, u.gold, u.gp, u.megaphones, u.flowers, u.country, u.banned, a.IsOnline " +
+  "SELECT u.IdAcc, u.game_id, u.`rank`, u.gm, u.cash, u.gold, u.gp, u.megaphones, u.flowers, u.country, u.banned, u.favorite_mobiles, a.IsOnline " +
   "FROM users u LEFT JOIN accounts a ON a.Id = u.IdAcc ";
 
 // ---------- Buscar ----------
@@ -194,6 +218,10 @@ router.get("/user/:id", function (req, res) {
       var ranks = [];
       for (var r = 0; r <= 31; r++) ranks.push({ value: r, selected: r === u.rank });
       return loadLevels(req.db.connection, u.IdAcc).then(function (levels) {
+      var fav = parseFav(u.favorite_mobiles);
+      var favChoices = FAV_CHOICES.map(function (c) {
+        return { id: c[0], name: c[1], checked: fav.ids.indexOf(c[0]) !== -1 };
+      });
       var levelRows = levels.map(function (lv) {
         return {
           level: lv.level,
@@ -215,6 +243,8 @@ router.get("/user/:id", function (req, res) {
         ranks: ranks,
         is_self: u.IdAcc === req.admin.IdAcc,
         levels: levelRows,
+        fav_text: favText(fav),
+        fav_choices: favChoices,
         csrf: csrfToken(req),
         flash: takeFlash(req),
       });
@@ -310,6 +340,30 @@ router.post("/user/:id", function (req, res) {
     sets.push("`country` = ?");
     params.push(countryRaw.toUpperCase());
     changes.push("País = " + countryRaw.toUpperCase());
+  }
+
+  // Móvil favorito para Random: no cambiar / por defecto / ninguno / los marcados
+  var favMode = String(req.body.favmode || "keep");
+  if (favMode === "default") {
+    sets.push("`favorite_mobiles` = NULL");
+    changes.push("Móvil favorito = por defecto");
+  } else if (favMode === "none") {
+    sets.push("`favorite_mobiles` = ?");
+    params.push("none");
+    changes.push("Móvil favorito = ninguno");
+  } else if (favMode === "custom") {
+    var picked = [].concat(req.body.favmobile || []);
+    var favIds = [];
+    for (var fi = 0; fi < picked.length; fi++) {
+      var fid = parseIntStrict(picked[fi]);
+      if (fid === null || FAV_NAMES[fid] === undefined) return fail("Móvil favorito no válido.");
+      if (favIds.indexOf(fid) === -1) favIds.push(fid);
+    }
+    if (favIds.length === 0) return fail("Marca al menos un móvil, o elige «Ninguno» / «Por defecto».");
+    favIds.sort(function (a, b) { return a - b; });
+    sets.push("`favorite_mobiles` = ?");
+    params.push(favIds.join(","));
+    changes.push("Móvil favorito = " + favText({ mode: "custom", ids: favIds }));
   }
 
   if (sets.length === 0 && !wantsLevel) return fail("No indicaste ningún cambio.");
