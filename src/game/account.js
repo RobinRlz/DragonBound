@@ -949,14 +949,31 @@ module.exports = class Account {
         if (type === null) type = 0;
         if (page === null) page = 0;
 
-        var data_page = self.gameserver.avatars.getShopListType(type, page);
+        // Filtro opcional de la tienda: moneda (a = todo, c = cash, g = oro) y orden por precio
+        // (n = normal, a = menor a mayor, d = mayor a menor).
+        let shop_currency =
+          message[3] === "c" || message[3] === "g" ? message[3] : "a";
+        let shop_sort =
+          message[4] === "a" || message[4] === "d" ? message[4] : "n";
+
+        var data_page = self.gameserver.avatars.getShopListType(
+          type,
+          page,
+          false,
+          undefined,
+          0,
+          shop_currency,
+          shop_sort
+        );
         if (message[1].length > 1) {
           data_page = self.gameserver.avatars.getShopListType(
             type,
             page,
             true,
             message[1],
-            self.player.gm
+            self.player.gm,
+            shop_currency,
+            shop_sort
           );
         }
         if (data_page !== null) {

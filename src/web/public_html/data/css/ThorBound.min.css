@@ -15232,3 +15232,32 @@ img.emoji {
     padding: 6px 10px;
     color: white
 }
+
+/* Tienda: filtro por moneda y orden por precio (a los lados del título AVATAR SHOP) */
+#shopFilterBar {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 0;
+    height: 0
+}
+
+#shopFilterBar select {
+    position: absolute;
+    top: 3px;
+    width: 128px;
+    font-size: 11px;
+    padding: 1px 2px
+}
+
+#shopFilterCurrency {
+    left: 262px
+}
+
+#shopFilterSort {
+    left: 650px
+}
+
+#shopFilterBar select:disabled {
+    opacity: .55
+}

@@ -40900,7 +40900,9 @@
       this.ds.Send(CLIENT_OPCODE.get_avatar, a);
     };
     DragonNetwork.prototype.SendGetShopPage = function (a, b) {
-      this.ds.Send(CLIENT_OPCODE.get_shop_page, a, b);
+      // Filtro de la tienda: moneda (a = todo, c = cash, g = oro) y orden por precio (n, a, d)
+      var f = window.shopFilter || { currency: "a", sort: "n" };
+      this.ds.Send(CLIENT_OPCODE.get_shop_page, a, b, f.currency, f.sort);
     };
     DragonNetwork.prototype.SendGetNextAvatar = function () {
       this.ds.Send(CLIENT_OPCODE.get_next_avatar);
@@ -47484,6 +47486,30 @@
           a.myPlayerInfo.gender,
           a.myPlayerInfo.rank
         );
+      });
+      function ShopApplyPriceFilter() {
+        var currency = $("#shopFilterCurrency").val(),
+          sort = "a" == currency ? "n" : $("#shopFilterSort").val();
+        // Sin moneda elegida no se puede ordenar por precio (cash y oro no son comparables)
+        $("#shopFilterSort").prop("disabled", "a" == currency);
+        "a" == currency && $("#shopFilterSort").val("n");
+        window.shopFilter = {
+          currency: currency,
+          sort: sort,
+        };
+        a.shop_cache = {};
+        g_number_of_pages = [];
+        AudioPlay(AUDIO_BUTTON_SELECT2);
+        ShopSetPage(
+          void 0 === g_current_shop_type ? AVATAR_TYPE_HEAD : g_current_shop_type,
+          0,
+          a.myPlayerInfo.gender,
+          a.myPlayerInfo.rank
+        );
+      }
+      $("#shopFilterCurrency, #shopFilterSort").on("change", ShopApplyPriceFilter);
+      $("#shopFilterBar").on("keydown keyup", function (a) {
+        a.stopPropagation();
       });
       $("#buttonShopNext").click(function () {
         AudioPlay(AUDIO_BUTTON_SELECT2);

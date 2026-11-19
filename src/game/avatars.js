@@ -135,8 +135,40 @@ module.exports = Avatars = cls.Class.extend({
         return res;
     },
 
-    getShopListType: function (type, page, name = false, nameSearch, gm = 0) {
+    // Filtra por moneda ('c' = solo cash, 'g' = solo oro) y ordena por precio ('a' = menor a mayor,
+    // 'd' = mayor a menor). El precio de referencia es el mismo que muestra la tienda en cada avatar
+    // (semanal; si no tiene, mensual; si no, permanente), para que el orden coincida con lo que se ve.
+    // Con moneda 'a' (todo) o sin orden ('n') no cambia la lista.
+    applyShopFilter: function (list, currency, sort) {
+        if (currency !== 'c' && currency !== 'g') return list;
+        var prefix = currency === 'c' ? 'cash_' : 'gold_';
+        var priceOf = function (n) {
+            var s = n[6] || {};
+            if (s[prefix + 'week'] > 0) return s[prefix + 'week'];
+            if (s[prefix + 'month'] > 0) return s[prefix + 'month'];
+            if (s[prefix + 'perm'] > 0) return s[prefix + 'perm'];
+            return 0;
+        };
+        var rows = [];
+        for (var i = 0; i < list.length; i++) {
+            var p = priceOf(list[i]);
+            if (p > 0) rows.push({ item: list[i], index: i, price: p });
+        }
+        if (sort === 'a' || sort === 'd') {
+            var dir = sort === 'a' ? 1 : -1;
+            rows.sort(function (x, y) { return (x.price - y.price) * dir || x.index - y.index; });
+        }
+        return rows.map(function (r) { return r.item; });
+    },
+
+    getShopListType: function (type, page, name = false, nameSearch, gm = 0, currency = 'a', sort = 'n') {
         var ls = name?this.getAvatarListName(nameSearch, gm):this.getAvatarsListType(type);
+        var filtered = currency === 'c' || currency === 'g';
+        if (ls !== null && filtered) ls = this.applyShopFilter(ls, currency, sort);
+        if (filtered && (ls === null || ls.length === 0)) {
+            // Sin resultados con este filtro: página vacía (si no, el cliente se queda esperando respuesta).
+            return [52, name ? nameSearch : this.getTypeFromNumber(type), 0, 1, []];
+        }
         if (ls !== null && ls.length > 0) {
             var dt = [52];
             var x = name?nameSearch:this.getTypeFromNumber(type);
