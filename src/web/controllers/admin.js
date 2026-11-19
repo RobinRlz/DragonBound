@@ -26,6 +26,66 @@ var NUMERIC_FIELDS = {
   flowers: { column: "flowers", label: "Flores" },
 };
 
+// Cuentas con acceso al panel además del rango 31 (ADMIN_USER_IDS=634,12 en .env).
+// Permite que una cuenta de administración tenga cualquier rango/nivel, por ejemplo Dragon.
+var ADMIN_IDS = (process.env.ADMIN_USER_IDS || "")
+  .split(",")
+  .map(function (v) { return parseInt(v, 10); })
+  .filter(function (v) { return Number.isInteger(v); });
+
+function isAdminAccount(id, rank) {
+  return rank === ADMIN_RANK || ADMIN_IDS.indexOf(id) !== -1;
+}
+
+// ---- Niveles según GP (mismos umbrales que src/game/account.js y src/ranking/rankingscript.js)
+// Niveles 0-11: umbral fijo de GP. Niveles 12-24: dependen del puesto en el ranking de GP
+// (Silver Dragon = el nº 1, Red Dragon = los 4 siguientes, Blue Dragon = los 16 siguientes, etc.).
+var FIXED_GP = { 0: 1000, 1: 1100, 2: 1200, 3: 1500, 4: 1800, 5: 2300, 6: 2800, 7: 3500, 8: 4200, 9: 5100, 10: 6000, 11: 6900 };
+var RANK_NAMES = {
+  12: "Battle Axe Plus", 13: "Silver Battle Axe", 14: "Silver Battle Axe Plus", 15: "Gold Battle Axe",
+  16: "Gold Battle Axe Plus", 17: "Violet Wand", 18: "Sapphire Wand", 19: "Ruby Wand", 20: "Diamond Wand",
+  22: "Blue Dragon", 23: "Red Dragon", 24: "Silver Dragon",
+};
+// Orden en el que el ranking reparte puestos, con el tamaño de cada grupo.
+var BRACKETS = [
+  [24, function () { return 1; }], [23, function () { return 4; }], [22, function () { return 16; }],
+  [20, function (n) { return Math.ceil(n * 0.01); }], [19, function (n) { return Math.ceil(n * 0.03); }],
+  [18, function (n) { return Math.ceil(n * 0.06); }], [17, function (n) { return Math.ceil(n * 0.12); }],
+  [16, function (n) { return Math.ceil(n * 0.2); }], [15, function (n) { return Math.ceil(n * 0.32); }],
+  [14, function (n) { return Math.ceil(n * 0.46); }], [13, function (n) { return Math.ceil(n * 0.62); }],
+  [12, function (n) { return Math.ceil(n * 0.8); }],
+];
+
+/** `others`: GP (> 8746) de los demás jugadores, de mayor a menor. `total`: jugadores en total. */
+function computeLevels(others, total) {
+  var levels = [];
+  var l;
+  for (l = 0; l <= 11; l++) levels.push({ level: l, name: "Nivel " + l, gp: FIXED_GP[l], dynamic: false });
+  var start = 0;
+  var dyn = [];
+  BRACKETS.forEach(function (b) {
+    dyn.push({ level: b[0], start: start });
+    start += b[1](total);
+  });
+  dyn.sort(function (a, b) { return a.level - b.level; });
+  dyn.forEach(function (d) {
+    var better = others[d.start];
+    var gp = better !== undefined ? Math.min(better + 1, INT_MAX) : 8747;
+    levels.push({ level: d.level, name: RANK_NAMES[d.level], gp: gp, dynamic: true });
+  });
+  return levels;
+}
+
+function loadLevels(db, targetId) {
+  return Promise.all([
+    db.query("SELECT gp FROM users WHERE IdAcc <> ? AND (gm IS NULL OR gm <> 1) AND gp > 8746 ORDER BY gp DESC", [targetId]),
+    db.query("SELECT COUNT(*) AS c FROM users"),
+  ]).then(function (r) {
+    var others = r[0][0].map(function (row) { return row.gp; });
+    return computeLevels(others, r[1][0][0].c);
+  });
+}
+
 function fmt(n) {
   return Number(n || 0).toLocaleString("en-US");
 }
@@ -50,13 +110,13 @@ function takeFlash(req) {
   return flash;
 }
 
-// Solo rango 31. Devuelve 404 a los demás para no revelar que el panel existe.
+// Solo rango 31 (o ids de ADMIN_USER_IDS). Devuelve 404 a los demás para no revelar que el panel existe.
 function requireAdmin(req, res, next) {
   req.db.connection
     .query("SELECT IdAcc, game_id, `rank` FROM users WHERE IdAcc = ?", [req.session.account_id])
     .then(function (result) {
       var me = result[0][0];
-      if (!me || me.rank !== ADMIN_RANK) {
+      if (!me || !isAdminAccount(me.IdAcc, me.rank)) {
         res.status(404).send("Not found");
         return;
       }
@@ -133,6 +193,17 @@ router.get("/user/:id", function (req, res) {
       }
       var ranks = [];
       for (var r = 0; r <= 31; r++) ranks.push({ value: r, selected: r === u.rank });
+      return loadLevels(req.db.connection, u.IdAcc).then(function (levels) {
+      var levelRows = levels.map(function (lv) {
+        return {
+          level: lv.level,
+          name: lv.name,
+          gp: fmt(lv.gp),
+          dynamic: lv.dynamic,
+          current: lv.level === u.rank,
+          label: lv.level + " · " + lv.name + " — GP " + (lv.dynamic ? "≥ " : "") + fmt(lv.gp),
+        };
+      });
       res.render("admin", {
         layout: false,
         view_edit: true,
@@ -143,8 +214,10 @@ router.get("/user/:id", function (req, res) {
         flowers: fmt(u.flowers),
         ranks: ranks,
         is_self: u.IdAcc === req.admin.IdAcc,
+        levels: levelRows,
         csrf: csrfToken(req),
         flash: takeFlash(req),
+      });
       });
     })
     .catch(function (err) {
@@ -176,6 +249,16 @@ router.post("/user/:id", function (req, res) {
   var params = [];
   var changes = [];
 
+  var levelRaw = req.body.level;
+  var wantsLevel = levelRaw !== undefined && String(levelRaw) !== "";
+  var levelNumber = wantsLevel ? parseIntStrict(levelRaw) : null;
+  if (wantsLevel) {
+    var gpTyped = req.body.gp_value !== undefined && String(req.body.gp_value).trim() !== "";
+    var rankTyped = req.body.rank !== undefined && String(req.body.rank) !== "";
+    if (gpTyped || rankTyped) return fail("Elige un nivel o escribe GP/rango a mano, no las dos cosas a la vez.");
+    if (levelNumber === null || levelNumber < 0 || levelNumber > 24 || levelNumber === 21) return fail("Nivel no válido.");
+  }
+
   // Cash, oro, GP, megáfonos, flores: "sumar" o "establecer"
   var names = Object.keys(NUMERIC_FIELDS);
   for (var i = 0; i < names.length; i++) {
@@ -204,7 +287,7 @@ router.post("/user/:id", function (req, res) {
   if (rankRaw !== undefined && String(rankRaw) !== "") {
     var rank = parseIntStrict(rankRaw);
     if (rank === null || rank < 0 || rank > 31) return fail("Rango no válido (0 a 31).");
-    if (id === req.admin.IdAcc && rank !== ADMIN_RANK) {
+    if (id === req.admin.IdAcc && !isAdminAccount(id, rank)) {
       return fail("No puedes quitarte a ti mismo el rango 31 (te quedarías sin acceso al panel).");
     }
     sets.push("`rank` = ?");
@@ -229,13 +312,28 @@ router.post("/user/:id", function (req, res) {
     changes.push("País = " + countryRaw.toUpperCase());
   }
 
-  if (sets.length === 0) return fail("No indicaste ningún cambio.");
+  if (sets.length === 0 && !wantsLevel) return fail("No indicaste ningún cambio.");
 
   req.db.connection
     .query("SELECT IdAcc, game_id FROM users WHERE IdAcc = ?", [id])
     .then(function (result) {
       var target = result[0][0];
       if (!target) return fail("No existe un jugador con ese ID.");
+      if (!wantsLevel) return target;
+      if (id === req.admin.IdAcc && !isAdminAccount(id, levelNumber)) {
+        fail("Esta cuenta perdería el acceso al panel con ese nivel. Añade su ID a ADMIN_USER_IDS en .env o usa otra cuenta.");
+        return null;
+      }
+      return loadLevels(req.db.connection, id).then(function (levels) {
+        var lv = levels.filter(function (x) { return x.level === levelNumber; })[0];
+        sets.push("`gp` = ?", "`rank` = ?");
+        params.push(lv.gp, lv.level);
+        changes.push("Nivel " + lv.level + " (" + lv.name + "): GP = " + lv.gp + ", rango = " + lv.level);
+        return target;
+      });
+    })
+    .then(function (target) {
+      if (!target) return;
       params.push(id);
       return req.db.connection.query("UPDATE users SET " + sets.join(", ") + " WHERE IdAcc = ?", params).then(function () {
         Logger.info("[ADMIN] " + req.admin.game_id + " modificó a " + target.game_id + " (" + id + "): " + changes.join(", "));

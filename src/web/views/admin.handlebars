@@ -127,6 +127,40 @@
         <input type="hidden" name="_csrf" value="{{csrf}}">
 
         <div class="card">
+          <h2>Nivel por GP</h2>
+          <div class="grid">
+            <div class="field">
+              <label class="title" for="level">Elegir nivel</label>
+              <div class="current">Rango actual: {{u.rank}} · GP actual: {{u.gp}}</div>
+              <select id="level" name="level" style="width:100%">
+                <option value="">No cambiar</option>
+                {{#each levels}}<option value="{{level}}">{{label}}</option>{{/each}}
+              </select>
+            </div>
+          </div>
+          <p class="hint">Al guardar se fijan a la vez el <strong>GP</strong> y el <strong>rango</strong> de ese nivel. No lo combines con los campos de GP o rango de abajo.
+            Los niveles 12 a 24 (hasta Silver Dragon) dependen del puesto en el ranking de GP, así que el GP mostrado es el necesario ahora mismo, según los demás jugadores.</p>
+          <details style="margin-top:12px">
+            <summary style="cursor:pointer;color:var(--accent)">Ver la lista completa de GP por nivel</summary>
+            <div class="table-wrap" style="margin-top:10px">
+              <table>
+                <thead><tr><th>Nivel</th><th>Nombre</th><th class="num">GP</th><th></th></tr></thead>
+                <tbody>
+                  {{#each levels}}
+                  <tr>
+                    <td>{{level}}</td>
+                    <td>{{name}}</td>
+                    <td class="num">{{#if dynamic}}≥ {{/if}}{{gp}}</td>
+                    <td>{{#if current}}<span class="tag on">actual</span>{{/if}}</td>
+                  </tr>
+                  {{/each}}
+                </tbody>
+              </table>
+            </div>
+          </details>
+        </div>
+
+        <div class="card">
           <h2>Recursos</h2>
           <div class="grid">
             <div class="field">
