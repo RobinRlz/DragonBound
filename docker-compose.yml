@@ -36,6 +36,8 @@ services:
     env_file: .env
     volumes:
       - ./src/web:/app/src/web
+      # La web también usa código del servidor de juego (gametypes, Shoot, base de datos...)
+      - ./src/game:/app/src/game
     ports:
       - "80:80"
     depends_on:

@@ -1,6 +1,7 @@
 var Types = require("./gametypes");
 var _ = require("underscore");
 var Message = require("./lib/message");
+var aimAssist = require("./lib/aimAssist");
 var Logger = require("./lib/logger");
 var db = require("./data");
 var WebSocket = require("ws");
@@ -5211,6 +5212,33 @@ module.exports = class Commands {
               6,
             ]);
           }
+          break;
+        }
+        // ---- Pruebas: asistente de puntería del servidor (solo cuentas de AIM_ASSIST_USER_IDS) ----
+        case "/apuntar": {
+          if (!aimAssist.isAllowed(self.account)) break;
+          var game_aim = self.account.room && self.account.room.game;
+          if (!game_aim) {
+            self.account.send([0, "/apuntar solo funciona durante una partida.", "", 6]);
+            break;
+          }
+          var typeArg = String(data[1] || "1").toLowerCase();
+          var shotType = typeArg === "2" ? 1 : typeArg === "ss" ? 2 : 0;
+          var aimResult = aimAssist.solve(game_aim, self.account, shotType);
+          self.account.send([0, aimAssist.describe(aimResult), "", 6]);
+          break;
+        }
+        case "/autodisparo": {
+          if (!aimAssist.isAllowed(self.account)) break;
+          self.account.player.autoShot = !self.account.player.autoShot;
+          self.account.send([
+            0,
+            self.account.player.autoShot
+              ? "Autodisparo ACTIVADO: el servidor disparará por ti al empezar tu turno. Escribe /autodisparo para desactivarlo."
+              : "Autodisparo desactivado.",
+            "",
+            6,
+          ]);
           break;
         }
         case "/dado":

@@ -12,6 +12,7 @@ var express = require("express"),
 var crypto = require("crypto");
 
 var Logger = require("../../game/lib/logger");
+var shotSimulator = require("../lib/shotSimulator");
 var auth = require("../middlewares/auth");
 
 var ADMIN_RANK = 31;
@@ -172,6 +173,63 @@ function mapUser(u) {
 var USER_SELECT =
   "SELECT u.IdAcc, u.game_id, u.`rank`, u.gm, u.cash, u.gold, u.gp, u.megaphones, u.flowers, u.country, u.banned, u.favorite_mobiles, a.IsOnline " +
   "FROM users u LEFT JOIN accounts a ON a.Id = u.IdAcc ";
+
+// ---------- Simulador de disparos (banco de pruebas de la física, sin partida real) ----------
+router.get("/simulador", function (req, res) {
+  res.render("admin-sim", {
+    layout: false,
+    admin_name: req.admin.game_id,
+    mobiles: shotSimulator.mobileList(),
+  });
+});
+
+function numParam(q, name, min, max, def) {
+  var raw = q[name];
+  if (raw === undefined || raw === "") return def;
+  var n = Number(raw);
+  if (!Number.isFinite(n)) return null;
+  return Math.min(max, Math.max(min, n));
+}
+
+router.get("/simulador/calc", function (req, res) {
+  var q = req.query;
+  var mobile = numParam(q, "mobile", 0, 99, 0);
+  if (mobile === null || !shotSimulator.isPlayable(Math.round(mobile))) {
+    return res.status(400).json({ error: "Móvil no válido." });
+  }
+  var input = {
+    mobile: Math.round(mobile),
+    type: Math.round(numParam(q, "type", 0, 2, 0)),
+    ang: numParam(q, "ang", 0, 90, 45),
+    power: numParam(q, "power", 0, 400, 250),
+    look: q.look === "0" ? 0 : 1,
+    wind_power: numParam(q, "wind_power", 0, 100, 0),
+    wind_ang: numParam(q, "wind_ang", 0, 359, 90),
+    x: numParam(q, "x", 50, shotSimulator.FIELD.w - 50, 300),
+    y: numParam(q, "y", 150, shotSimulator.FIELD.h - 50, 700),
+    forces: [],
+  };
+  for (var k in input) {
+    if (input[k] === null) return res.status(400).json({ error: "Parámetro no válido: " + k });
+  }
+  if (q.tornado === "1") {
+    var tpx = numParam(q, "tornado_px", 0, shotSimulator.FIELD.w, 900);
+    var tsz = numParam(q, "tornado_size", 100, 280, 150);
+    if (tpx === null || tsz === null) return res.status(400).json({ error: "Tornado no válido." });
+    input.forces.push({ kind: "tornado", px: tpx, size: tsz });
+  }
+  if (q.mirror === "1") {
+    var mpx = numParam(q, "mirror_px", 0, shotSimulator.FIELD.w, 1200);
+    if (mpx === null) return res.status(400).json({ error: "Pared no válida." });
+    input.forces.push({ kind: "mirror", px: mpx, size: 20 });
+  }
+  try {
+    res.json(shotSimulator.simulate(input));
+  } catch (e) {
+    Logger.debug("Simulador error: " + e.stack);
+    res.status(500).json({ error: "No se pudo simular este disparo." });
+  }
+});
 
 // ---------- Buscar ----------
 router.get("/", function (req, res) {

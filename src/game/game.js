@@ -6,6 +6,7 @@ var Shoot = require("./lib/shoot");
 var events = require("events");
 var thorControl = require("./lib/thorControl");
 var weatherControl = require("./lib/weatherControl");
+var aimAssist = require("./lib/aimAssist");
 const { forEach } = require("underscore");
 
 // Game
@@ -185,6 +186,44 @@ module.exports = class Game {
       //	console.log({is:"Pass Time Out",TimeOutAt:this.turnTime, player:player,PlayerID:PlayerID,turn:turn});
       this.gamePass(player);
     }, this.turnTime + shootTime);
+    this.scheduleAutoShot(player, PlayerID, shootTime);
+  }
+
+  // Autodisparo de pruebas (lib/aimAssist.js): si el jugador lo activó con /autodisparo, el servidor
+  // calcula y hace el disparo por él unos segundos después de empezar su turno.
+  scheduleAutoShot(account, PlayerID, shootTime = 0) {
+    clearTimeout(this.autoShotClock);
+    if (!account || !account.player || !account.player.autoShot || !aimAssist.isAllowed(account)) return;
+    this.autoShotClock = setTimeout(() => {
+      try {
+        if (this.game_endx || !this.room || this.room.game !== this) return;
+        const current = this.room.turn_list && this.room.turn_list[0];
+        if (!current || current.user_id !== PlayerID || account.player.is_alive !== 1) return;
+        const result = aimAssist.solve(this, account, 0);
+        if (!result || !result.best) {
+          account.send([0, "Autodisparo: no encontré un disparo que llegue al objetivo.", "", 6]);
+          return;
+        }
+        const pick =
+          result.current && result.current.error <= result.best.error ? result.current : result.best;
+        account.send([0, "Autodisparo → " + aimAssist.describe(result), "", 6]);
+        account.player.look = result.look;
+        account.player.ang = pick.ang;
+        this.gameShoot(
+          account.player.x,
+          account.player.y,
+          account.player.body || 0,
+          result.look,
+          pick.ang,
+          pick.power,
+          3,
+          0,
+          account
+        );
+      } catch (e) {
+        console.log("autodisparo error", e);
+      }
+    }, shootTime + 2500);
   }
   checkRoom() {
     var self = this;
@@ -437,6 +476,7 @@ module.exports = class Game {
     let self = this;
     let mobile_data;
     clearTimeout(self.turnPassClock);
+    clearTimeout(self.autoShotClock);
     power = parseInt((power * 234) / 100);
     if (account.player.mobile == Types.MOBILE.RANDOMIZER) {
       mobile_data =

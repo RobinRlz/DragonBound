@@ -1,0 +1,225 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="robots" content="noindex, nofollow">
+  <title>Simulador de disparos · DragonBound</title>
+  <style>
+    :root { --bg:#0f1420; --panel:#182033; --panel2:#1f2940; --line:#2c3a5a; --text:#e8ecf6; --muted:#93a1c4; --accent:#5aa9ff; --err:#ff6b6b; --warn:#ffc857; --ok:#3ecf8e; }
+    * { box-sizing: border-box; }
+    body { margin:0; background:var(--bg); color:var(--text); font:14px/1.5 system-ui,-apple-system,"Segoe UI",sans-serif; }
+    a { color:var(--accent); text-decoration:none; } a:hover { text-decoration:underline; }
+    header { display:flex; flex-wrap:wrap; gap:12px; align-items:center; justify-content:space-between; padding:14px 20px; background:var(--panel); border-bottom:1px solid var(--line); }
+    header h1 { margin:0; font-size:18px; } header .who { color:var(--muted); font-size:14px; }
+    main { max-width:1200px; margin:0 auto; padding:18px 16px 48px; display:grid; grid-template-columns:300px 1fr; gap:16px; }
+    @media (max-width: 900px) { main { grid-template-columns:1fr; } }
+    main > section { min-width:0; }
+    .card { background:var(--panel); border:1px solid var(--line); border-radius:10px; padding:14px; margin-bottom:14px; }
+    .card h2 { margin:0 0 10px; font-size:15px; }
+    label { display:block; color:var(--muted); font-size:12px; margin:8px 0 3px; }
+    .row { display:flex; gap:8px; align-items:center; }
+    .row input[type=range] { flex:1; }
+    .val { min-width:44px; text-align:right; font-variant-numeric:tabular-nums; color:var(--text); }
+    select, input[type=number] { width:100%; background:var(--panel2); color:var(--text); border:1px solid var(--line); border-radius:7px; padding:6px 8px; font:inherit; }
+    .check { display:flex; align-items:center; gap:8px; color:var(--text); font-size:13px; margin-top:10px; }
+    canvas { width:100%; max-width:100%; height:auto; background:#0b1222; border:1px solid var(--line); border-radius:10px; display:block; }
+    table { width:100%; border-collapse:collapse; font-size:13px; }
+    th, td { text-align:left; padding:6px 8px; border-bottom:1px solid var(--line); white-space:nowrap; }
+    th { color:var(--muted); font-weight:600; }
+    td.num { text-align:right; font-variant-numeric:tabular-nums; }
+    .table-wrap { overflow-x:auto; }
+    .hint { color:var(--muted); font-size:12.5px; margin:8px 0 0; }
+    .err { color:var(--err); }
+    .legend { display:flex; flex-wrap:wrap; gap:14px; font-size:12px; color:var(--muted); margin-top:8px; }
+    .sw { display:inline-block; width:12px; height:12px; border-radius:3px; vertical-align:-2px; margin-right:5px; }
+    code { background:var(--panel2); padding:1px 5px; border-radius:4px; }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>Simulador de disparos</h1>
+    <div class="who">Sesión: <strong>{{admin_name}}</strong> · <a href="/admin">Panel</a> · <a href="/">Volver al juego</a></div>
+  </header>
+
+  <main>
+    <section>
+      <div class="card">
+        <h2>Disparo</h2>
+        <label for="mobile">Móvil</label>
+        <select id="mobile">{{#each mobiles}}<option value="{{id}}">{{name}}</option>{{/each}}</select>
+        <label for="type">Tipo de disparo</label>
+        <select id="type"><option value="0">Disparo 1</option><option value="1">Disparo 2</option><option value="2">Especial (SS)</option></select>
+        <label for="look">Mira hacia</label>
+        <select id="look"><option value="1">Derecha</option><option value="0">Izquierda</option></select>
+        <label for="ang">Ángulo</label>
+        <div class="row"><input type="range" id="ang" min="0" max="90" value="45"><span class="val" id="ang_v"></span></div>
+        <label for="power">Fuerza (barra 0–400)</label>
+        <div class="row"><input type="range" id="power" min="0" max="400" value="250"><span class="val" id="power_v"></span></div>
+        <label for="x">Posición del móvil (x)</label>
+        <div class="row"><input type="range" id="x" min="50" max="1750" value="300"><span class="val" id="x_v"></span></div>
+      </div>
+
+      <div class="card">
+        <h2>Viento</h2>
+        <label for="wind_power">Fuerza del viento</label>
+        <div class="row"><input type="range" id="wind_power" min="0" max="50" value="0"><span class="val" id="wind_power_v"></span></div>
+        <label for="wind_ang">Ángulo del viento (valor del servidor)</label>
+        <div class="row"><input type="range" id="wind_ang" min="0" max="359" value="90"><span class="val" id="wind_ang_v"></span></div>
+        <p class="hint" id="wind_effect"></p>
+      </div>
+
+      <div class="card">
+        <h2>Clima del mapa</h2>
+        <label class="check"><input type="checkbox" id="tornado"> Tornado (huracán)</label>
+        <div class="row"><input type="range" id="tornado_px" min="0" max="1800" value="900"><span class="val" id="tornado_px_v"></span></div>
+        <label for="tornado_size">Ancho del tornado</label>
+        <div class="row"><input type="range" id="tornado_size" min="100" max="280" value="150"><span class="val" id="tornado_size_v"></span></div>
+        <label class="check"><input type="checkbox" id="mirror"> Pared (espejo)</label>
+        <div class="row"><input type="range" id="mirror_px" min="0" max="1800" value="1200"><span class="val" id="mirror_px_v"></span></div>
+      </div>
+    </section>
+
+    <section>
+      <div class="card">
+        <canvas id="cv" width="1800" height="900" aria-label="Trayectoria del disparo"></canvas>
+        <div class="legend">
+          <span><span class="sw" style="background:#5aa9ff"></span>Bala</span>
+          <span><span class="sw" style="background:#c58bff"></span>Tras rebotar en la pared</span>
+          <span><span class="sw" style="background:#4fe0d0"></span>Tras el tornado</span>
+          <span><span class="sw" style="background:#ffc857"></span>Punto de caída</span>
+        </div>
+        <p class="err" id="error"></p>
+      </div>
+
+      <div class="card">
+        <h2>Resultado</h2>
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>Bala</th><th class="num">Cae en x</th><th class="num">Distancia</th><th class="num">Altura máx.</th><th class="num">Tiempo</th><th class="num">Gravedad</th><th class="num">Acel. horiz.</th><th>Recorrido</th></tr></thead>
+            <tbody id="rows"></tbody>
+          </table>
+        </div>
+        <p class="hint">Usa la misma física que el servidor de juego (<code>src/game/lib/shotTrace.js</code> → clase <code>Shoot</code>). Aquí el suelo es plano a la altura del móvil y no hay terreno ni jugadores. «Tiempo» está en ticks del mundo (la posición se calcula con <code>t / 485</code>).</p>
+      </div>
+    </section>
+  </main>
+
+  <script>
+    (function () {
+      var ids = ["mobile","type","look","ang","power","x","wind_power","wind_ang","tornado","tornado_px","tornado_size","mirror","mirror_px"];
+      var el = {}; ids.forEach(function (id) { el[id] = document.getElementById(id); });
+      var cv = document.getElementById("cv"), ctx = cv.getContext("2d");
+      var GROUND_Y = 700, last = null, timer = null, seq = 0;
+      var COLORS = { shot: "#5aa9ff", mirror: "#c58bff", tornado: "#4fe0d0" };
+
+      function showValues() {
+        ["ang","power","x","wind_power","wind_ang","tornado_px","tornado_size","mirror_px"].forEach(function (id) {
+          var v = document.getElementById(id + "_v"); if (v) v.textContent = el[id].value;
+        });
+        var p = +el.wind_power.value, a = +el.wind_ang.value * Math.PI / 180;
+        if (p === 0) { document.getElementById("wind_effect").textContent = "Sin viento."; return; }
+        var hx = -Math.cos(a), vy = Math.sin(a);
+        var h = Math.abs(hx) < 0.05 ? "" : (hx > 0 ? "empuja a la derecha" : "empuja a la izquierda");
+        var v = Math.abs(vy) < 0.05 ? "" : (vy > 0 ? "hacia abajo (cae antes)" : "hacia arriba (flota más)");
+        document.getElementById("wind_effect").textContent = "Efecto: " + [h, v].filter(Boolean).join(" y ") + ".";
+      }
+
+      function query() {
+        var q = { mobile: el.mobile.value, type: el.type.value, look: el.look.value, ang: el.ang.value, power: el.power.value,
+          x: el.x.value, y: GROUND_Y, wind_power: el.wind_power.value, wind_ang: el.wind_ang.value };
+        if (el.tornado.checked) { q.tornado = 1; q.tornado_px = el.tornado_px.value; q.tornado_size = el.tornado_size.value; }
+        if (el.mirror.checked) { q.mirror = 1; q.mirror_px = el.mirror_px.value; }
+        return Object.keys(q).map(function (k) { return k + "=" + encodeURIComponent(q[k]); }).join("&");
+      }
+
+      function run() {
+        showValues();
+        var my = ++seq;
+        fetch("/admin/simulador/calc?" + query(), { credentials: "same-origin" })
+          .then(function (r) { return r.json(); })
+          .then(function (data) {
+            if (my !== seq) return;
+            document.getElementById("error").textContent = data.error || "";
+            if (!data.error) { last = data; draw(data); table(data); }
+          })
+          .catch(function () { document.getElementById("error").textContent = "No se pudo calcular (¿sesión caducada?)."; });
+      }
+      function schedule() { clearTimeout(timer); timer = setTimeout(run, 60); }
+
+      function draw(d) {
+        var W = cv.width, H = cv.height;
+        ctx.clearRect(0, 0, W, H);
+        ctx.strokeStyle = "rgba(255,255,255,.06)"; ctx.lineWidth = 1;
+        for (var gx = 0; gx <= W; gx += 100) { ctx.beginPath(); ctx.moveTo(gx, 0); ctx.lineTo(gx, H); ctx.stroke(); }
+        for (var gy = 0; gy <= H; gy += 100) { ctx.beginPath(); ctx.moveTo(0, gy); ctx.lineTo(W, gy); ctx.stroke(); }
+        ctx.fillStyle = "rgba(255,255,255,.35)"; ctx.font = "16px system-ui";
+        for (var lx = 0; lx <= W; lx += 200) ctx.fillText(lx, lx + 4, H - 8);
+
+        if (el.tornado.checked) {
+          var tw = +el.tornado_size.value, tx = +el.tornado_px.value;
+          var g = ctx.createLinearGradient(tx - tw / 2, 0, tx + tw / 2, 0);
+          g.addColorStop(0, "rgba(79,224,208,0)"); g.addColorStop(.5, "rgba(79,224,208,.28)"); g.addColorStop(1, "rgba(79,224,208,0)");
+          ctx.fillStyle = g; ctx.fillRect(tx - tw / 2, 0, tw, GROUND_Y);
+          ctx.fillStyle = "#4fe0d0"; ctx.fillText("Tornado", tx - 30, 24);
+        }
+        if (el.mirror.checked) {
+          var mx = +el.mirror_px.value;
+          ctx.fillStyle = "rgba(197,139,255,.35)"; ctx.fillRect(mx - 10, 0, 20, GROUND_Y);
+          ctx.fillStyle = "#c58bff"; ctx.fillText("Pared", mx - 20, 46);
+        }
+
+        ctx.strokeStyle = "#3b4a6e"; ctx.lineWidth = 3;
+        ctx.beginPath(); ctx.moveTo(0, GROUND_Y); ctx.lineTo(W, GROUND_Y); ctx.stroke();
+
+        ctx.fillStyle = "#ff8a5b";
+        ctx.beginPath(); ctx.arc(d.player.x, d.player.y - 14, 14, 0, Math.PI * 2); ctx.fill();
+        ctx.fillStyle = "#fff"; ctx.fillText(d.mobile.name, d.player.x - 24, d.player.y + 26);
+
+        d.bullets.forEach(function (b, i) {
+          if (b.error || !b.segments) return;
+          ctx.lineWidth = i === 0 ? 3 : 1.6;
+          ctx.setLineDash(i === 0 ? [] : [7, 6]);
+          b.segments.forEach(function (s) {
+            ctx.strokeStyle = COLORS[s.kind] || COLORS.shot;
+            ctx.beginPath();
+            s.points.forEach(function (p, k) { if (k === 0) ctx.moveTo(p[0], p[1]); else ctx.lineTo(p[0], p[1]); });
+            ctx.stroke();
+          });
+          ctx.setLineDash([]);
+          if (b.landing) {
+            ctx.fillStyle = "#ffc857";
+            ctx.beginPath(); ctx.arc(b.landing.x, b.landing.y, i === 0 ? 8 : 5, 0, Math.PI * 2); ctx.fill();
+            if (i === 0) ctx.fillText("x = " + Math.round(b.landing.x), b.landing.x - 30, b.landing.y - 16);
+          }
+        });
+      }
+
+      function table(d) {
+        var tb = document.getElementById("rows"); tb.innerHTML = "";
+        d.bullets.forEach(function (b) {
+          var tr = document.createElement("tr");
+          var cells;
+          if (b.error) cells = [b.index + 1, "—", "—", "—", "—", "—", "—", b.error];
+          else cells = [b.index + 1,
+            b.landing ? Math.round(b.landing.x) : "fuera",
+            b.landing ? Math.round(Math.abs(b.landing.x - d.player.x)) + " px" : "—",
+            b.maxHeight + " px",
+            b.landing ? b.landing.ticks : "—",
+            b.physics.gravity, b.physics.horizontalAccel,
+            b.segments.map(function (s) { return s.kind === "shot" ? "bala" : s.kind === "mirror" ? "pared" : "tornado"; }).join(" → ")];
+          cells.forEach(function (c, k) {
+            var td = document.createElement("td"); td.textContent = c;
+            if (k > 0 && k < 7) td.className = "num";
+            tr.appendChild(td);
+          });
+          tb.appendChild(tr);
+        });
+      }
+
+      ids.forEach(function (id) { el[id].addEventListener("input", schedule); el[id].addEventListener("change", schedule); });
+      run();
+    })();
+  </script>
+</body>
+</html>
