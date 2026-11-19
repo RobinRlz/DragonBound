@@ -43,7 +43,9 @@ var userIds = parseIds(process.env.FAVORITE_MOBILE_USER_IDS);
 var mobiles = validMobiles(parseIds(process.env.FAVORITE_MOBILES || "8,10"));
 
 // ----- Configuración por cuenta (panel de administración), en caché y releída cada pocos segundos
-var perAccount = new Map(); // IdAcc -> array de móviles ([] = sin favorito)
+// OJO: no usar `new Map()` aquí. lib/map.js sobrescribe la variable global Map con la clase de mapas del
+// juego, así que en el servidor de juego `new Map()` NO es el Map nativo. Se usa un objeto simple.
+var perAccount = Object.create(null); // IdAcc -> array de móviles ([] = sin favorito)
 var pool = null;
 
 function refresh() {
@@ -61,12 +63,10 @@ function refresh() {
     pool
       .query("SELECT IdAcc, favorite_mobiles FROM users WHERE favorite_mobiles IS NOT NULL")
       .then(function (result) {
-        var next = new Map();
+        var next = Object.create(null);
         result[0].forEach(function (row) {
-          next.set(
-            row.IdAcc,
-            row.favorite_mobiles === "none" ? [] : validMobiles(parseIds(row.favorite_mobiles))
-          );
+          next[row.IdAcc] =
+            row.favorite_mobiles === "none" ? [] : validMobiles(parseIds(row.favorite_mobiles));
         });
         perAccount = next;
       })
@@ -84,7 +84,7 @@ if (timer.unref) timer.unref();
 function pickFavoriteMobile(userId) {
   var id = Number(userId);
   var list;
-  if (perAccount.has(id)) list = perAccount.get(id);
+  if (Object.prototype.hasOwnProperty.call(perAccount, id)) list = perAccount[id];
   else if (userIds.indexOf(id) !== -1) list = mobiles;
   else return null;
   if (!list || list.length === 0) return null;
