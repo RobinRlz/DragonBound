@@ -660,11 +660,25 @@ router.get("/s", function (req, res) {
     if (req.session.account_id) {
       req.session.touch();
       var acc_id = req.session.account_id;
-      var rank = req.session.rank;
-      var game_id = req.session.game_id;
-      var gender = req.session.gender;
-      var acc_session = req.session.acc_session;
-      res.send(JSON.stringify([acc_id, rank, 0, acc_session, game_id, gender]));
+      // El token de juego se renueva en cada login (en cualquier pestaña o dispositivo), así que el
+      // guardado en la sesión web caduca. Se lee de la base de datos para devolver siempre el vigente
+      // (y el rango/nombre actuales, que también pueden cambiar, por ejemplo desde el panel de admin).
+      req.db.connection
+        .query(
+          "SELECT a.Session, u.`rank`, u.game_id, u.gender FROM accounts a INNER JOIN users u ON u.IdAcc = a.Id WHERE a.Id = ?",
+          [acc_id]
+        )
+        .then(function (result) {
+          var row = result[0][0];
+          if (!row) return res.send(JSON.stringify([0]));
+          req.session.acc_session = row.Session;
+          req.session.rank = row.rank;
+          req.session.game_id = row.game_id;
+          res.send(JSON.stringify([acc_id, row.rank, 0, row.Session, row.game_id, row.gender]));
+        })
+        .catch(function () {
+          res.send(JSON.stringify([0]));
+        });
     } else {
       res.send(JSON.stringify([0]));
     }

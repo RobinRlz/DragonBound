@@ -667,6 +667,16 @@ module.exports = class Account {
           })
           .catch(function (err) {
             console.log("login incomplete 4 ", err);
+            // Sin error = sesión caducada o cuenta inexistente: avisar en vez de dejar al cliente en
+            // "Ingresar..." para siempre.
+            if (err === undefined) {
+              self.sendMessage(
+                new Message.alertResponse(
+                  ":)",
+                  "Tu sesión caducó (iniciaste sesión en otro lugar). Recarga la página (Ctrl+F5) e inicia sesión de nuevo."
+                )
+              );
+            }
             self.connection.close();
           });
         break;
