@@ -3,6 +3,7 @@ var _ = require('underscore');
 var Message = require('./lib/message');
 var Game = require('./game');
 var Logger = require('./lib/logger');
+var favoriteMobile = require('./lib/favoriteMobile');
 require('setimmediate');
 
 function getRndInteger(min, max) {
@@ -452,7 +453,9 @@ module.exports = class Room {
 						self.forPlayers(function (account) {
 							if (typeof (account) !== 'undefined') {
 								if (account.player.mobile === Types.MOBILE.RANDOM) {
-									account.player.mobile = Types.MOBILE_R[getRndInteger(0, Types.MOBILE_R.length-1)];
+									// Cuentas con móvil favorito (FAVORITE_MOBILE_USER_IDS): "Random" da siempre uno de esos
+									var favorite = favoriteMobile.pickFavoriteMobile(account.player.user_id);
+									account.player.mobile = favorite !== null ? favorite : Types.MOBILE_R[getRndInteger(0, Types.MOBILE_R.length-1)];
                                     account.player.reloadHp();
 								}
 								if (self.game_mode === Types.GAME_MODE.TAG) {
