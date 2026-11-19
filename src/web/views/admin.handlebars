@@ -1,0 +1,213 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="robots" content="noindex, nofollow">
+  <title>Panel de administración · DragonBound</title>
+  <style>
+    :root {
+      --bg: #0f1420; --panel: #182033; --panel2: #1f2940; --line: #2c3a5a;
+      --text: #e8ecf6; --muted: #93a1c4; --accent: #5aa9ff; --ok: #3ecf8e; --err: #ff6b6b; --warn: #ffc857;
+    }
+    * { box-sizing: border-box; }
+    body { margin: 0; background: var(--bg); color: var(--text); font: 15px/1.5 system-ui, -apple-system, "Segoe UI", sans-serif; }
+    a { color: var(--accent); text-decoration: none; }
+    a:hover { text-decoration: underline; }
+    header { display: flex; flex-wrap: wrap; gap: 12px; align-items: center; justify-content: space-between;
+             padding: 14px 20px; background: var(--panel); border-bottom: 1px solid var(--line); }
+    header h1 { margin: 0; font-size: 18px; }
+    header .who { color: var(--muted); font-size: 14px; }
+    main { max-width: 980px; margin: 0 auto; padding: 20px 16px 48px; }
+    .card { background: var(--panel); border: 1px solid var(--line); border-radius: 10px; padding: 18px; margin-bottom: 18px; }
+    .card h2 { margin: 0 0 12px; font-size: 16px; }
+    .flash { padding: 12px 14px; border-radius: 8px; margin-bottom: 18px; border: 1px solid; }
+    .flash.ok { background: rgba(62,207,142,.1); border-color: var(--ok); color: var(--ok); }
+    .flash.error { background: rgba(255,107,107,.1); border-color: var(--err); color: var(--err); }
+    .warn { background: rgba(255,200,87,.1); border: 1px solid var(--warn); color: var(--warn); padding: 10px 14px; border-radius: 8px; margin-bottom: 18px; }
+    form.search { display: flex; gap: 8px; flex-wrap: wrap; }
+    input[type=text], input[type=number], select {
+      background: var(--panel2); color: var(--text); border: 1px solid var(--line); border-radius: 8px; padding: 9px 11px; font: inherit; min-width: 0;
+    }
+    input:focus, select:focus { outline: 2px solid var(--accent); outline-offset: 1px; }
+    form.search input[type=text] { flex: 1 1 220px; }
+    button, .btn { background: var(--accent); color: #06121f; border: 0; border-radius: 8px; padding: 9px 16px; font: inherit; font-weight: 600; cursor: pointer; display: inline-block; }
+    button:hover, .btn:hover { filter: brightness(1.1); text-decoration: none; }
+    .btn.secondary { background: var(--panel2); color: var(--text); border: 1px solid var(--line); }
+    table { width: 100%; border-collapse: collapse; }
+    th, td { text-align: left; padding: 9px 10px; border-bottom: 1px solid var(--line); white-space: nowrap; }
+    th { color: var(--muted); font-weight: 600; font-size: 13px; }
+    td.num { text-align: right; font-variant-numeric: tabular-nums; }
+    .table-wrap { overflow-x: auto; }
+    .tag { font-size: 12px; padding: 2px 8px; border-radius: 999px; border: 1px solid var(--line); color: var(--muted); }
+    .tag.on { color: var(--ok); border-color: var(--ok); }
+    .tag.gm { color: var(--accent); border-color: var(--accent); }
+    .tag.ban { color: var(--err); border-color: var(--err); }
+    .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 14px; }
+    .field { background: var(--panel2); border: 1px solid var(--line); border-radius: 10px; padding: 12px; }
+    .field label.title { display: block; font-weight: 600; margin-bottom: 2px; }
+    .field .current { color: var(--muted); font-size: 13px; margin-bottom: 8px; }
+    .field .row { display: flex; gap: 8px; }
+    .field .row input { flex: 1 1 auto; width: 100%; }
+    .hint { color: var(--muted); font-size: 13px; margin: 12px 0 0; }
+    .actions { margin-top: 18px; display: flex; gap: 10px; flex-wrap: wrap; }
+    .empty { color: var(--muted); padding: 14px 0; }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>Panel de administración</h1>
+    <div class="who">Sesión: <strong>{{admin_name}}</strong> · <a href="/admin">Buscar jugadores</a> · <a href="/">Volver al juego</a></div>
+  </header>
+
+  <main>
+    {{#if flash}}
+      <div class="flash {{flash.type}}">{{flash.msg}}</div>
+    {{/if}}
+
+    {{#if view_search}}
+      <div class="card">
+        <h2>Buscar jugador</h2>
+        <form class="search" method="GET" action="/admin">
+          <input type="text" name="q" value="{{q}}" placeholder="Nombre o ID del jugador" maxlength="45" autofocus>
+          <button type="submit">Buscar</button>
+        </form>
+        <p class="hint">Sin texto se muestran los 25 jugadores más recientes.</p>
+      </div>
+
+      <div class="card">
+        <h2>{{#if searched}}Resultados{{else}}Jugadores recientes{{/if}}</h2>
+        {{#if users.length}}
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr><th>ID</th><th>Nombre</th><th>Rango</th><th class="num">Cash</th><th class="num">Oro</th><th class="num">GP</th><th>Estado</th><th></th></tr>
+              </thead>
+              <tbody>
+                {{#each users}}
+                <tr>
+                  <td>{{id}}</td>
+                  <td><strong>{{name}}</strong></td>
+                  <td>{{rank}}</td>
+                  <td class="num">{{cash}}</td>
+                  <td class="num">{{gold}}</td>
+                  <td class="num">{{gp}}</td>
+                  <td>
+                    {{#if online}}<span class="tag on">en línea</span>{{/if}}
+                    {{#if gm}}<span class="tag gm">GM</span>{{/if}}
+                    {{#if banned}}<span class="tag ban">baneado</span>{{/if}}
+                  </td>
+                  <td><a class="btn secondary" href="/admin/user/{{id}}">Editar</a></td>
+                </tr>
+                {{/each}}
+              </tbody>
+            </table>
+          </div>
+        {{else}}
+          <div class="empty">No se encontró ningún jugador.</div>
+        {{/if}}
+      </div>
+    {{/if}}
+
+    {{#if view_edit}}
+      <div class="card">
+        <h2>{{u.name}} <span class="tag">ID {{u.id}}</span>
+          {{#if u.online}}<span class="tag on">en línea</span>{{/if}}
+          {{#if u.gm}}<span class="tag gm">GM</span>{{/if}}
+          {{#if u.banned}}<span class="tag ban">baneado</span>{{/if}}
+        </h2>
+        <p class="hint" style="margin:0">Rango actual: <strong>{{u.rank}}</strong> · País: <strong>{{#if country}}{{country}}{{else}}—{{/if}}</strong></p>
+      </div>
+
+      {{#if u.online}}
+        <div class="warn">Este jugador está conectado ahora mismo. El juego guarda sus valores en memoria: los cambios pueden no verse hasta que vuelva a entrar, o ser sobrescritos al salir. Lo más seguro es hacerlo cuando esté desconectado.</div>
+      {{/if}}
+
+      <form method="POST" action="/admin/user/{{u.id}}" autocomplete="off">
+        <input type="hidden" name="_csrf" value="{{csrf}}">
+
+        <div class="card">
+          <h2>Recursos</h2>
+          <div class="grid">
+            <div class="field">
+              <label class="title" for="cash_value">Cash</label>
+              <div class="current">Actual: {{u.cash}}</div>
+              <div class="row">
+                <input type="text" inputmode="numeric" id="cash_value" name="cash_value" placeholder="Cantidad">
+                <select name="cash_mode" aria-label="Modo para Cash"><option value="add">Sumar</option><option value="set">Fijar</option></select>
+              </div>
+            </div>
+            <div class="field">
+              <label class="title" for="gold_value">Oro</label>
+              <div class="current">Actual: {{u.gold}}</div>
+              <div class="row">
+                <input type="text" inputmode="numeric" id="gold_value" name="gold_value" placeholder="Cantidad">
+                <select name="gold_mode" aria-label="Modo para Oro"><option value="add">Sumar</option><option value="set">Fijar</option></select>
+              </div>
+            </div>
+            <div class="field">
+              <label class="title" for="gp_value">GP</label>
+              <div class="current">Actual: {{u.gp}}</div>
+              <div class="row">
+                <input type="text" inputmode="numeric" id="gp_value" name="gp_value" placeholder="Cantidad">
+                <select name="gp_mode" aria-label="Modo para GP"><option value="add">Sumar</option><option value="set">Fijar</option></select>
+              </div>
+            </div>
+            <div class="field">
+              <label class="title" for="megaphones_value">Megáfonos</label>
+              <div class="current">Actual: {{megaphones}}</div>
+              <div class="row">
+                <input type="text" inputmode="numeric" id="megaphones_value" name="megaphones_value" placeholder="Cantidad">
+                <select name="megaphones_mode" aria-label="Modo para Megáfonos"><option value="add">Sumar</option><option value="set">Fijar</option></select>
+              </div>
+            </div>
+            <div class="field">
+              <label class="title" for="flowers_value">Flores</label>
+              <div class="current">Actual: {{flowers}}</div>
+              <div class="row">
+                <input type="text" inputmode="numeric" id="flowers_value" name="flowers_value" placeholder="Cantidad">
+                <select name="flowers_mode" aria-label="Modo para Flores"><option value="add">Sumar</option><option value="set">Fijar</option></select>
+              </div>
+            </div>
+          </div>
+          <p class="hint">«Sumar» acepta números negativos para restar. Nunca baja de 0 ni pasa de 2.147.483.647. Deja vacío lo que no quieras cambiar.</p>
+        </div>
+
+        <div class="card">
+          <h2>Cuenta</h2>
+          <div class="grid">
+            <div class="field">
+              <label class="title" for="rank">Rango / nivel</label>
+              <div class="current">Actual: {{u.rank}}</div>
+              <select id="rank" name="rank" style="width:100%">
+                <option value="">No cambiar</option>
+                {{#each ranks}}<option value="{{value}}">{{value}}</option>{{/each}}
+              </select>
+              {{#if is_self}}<div class="current" style="margin-top:6px">Es tu cuenta: no puedes bajarte del rango 31.</div>{{/if}}
+            </div>
+            <div class="field">
+              <label class="title" for="gm">GM</label>
+              <div class="current">Actual: {{#if u.gm}}sí{{else}}no{{/if}}</div>
+              <select id="gm" name="gm" style="width:100%">
+                <option value="">No cambiar</option>
+                <option value="1">Hacer GM</option>
+                <option value="0">Quitar GM</option>
+              </select>
+            </div>
+            <div class="field">
+              <label class="title" for="country">País</label>
+              <div class="current">Actual: {{#if country}}{{country}}{{else}}—{{/if}}</div>
+              <input type="text" id="country" name="country" maxlength="3" placeholder="PE, MX, AR…" style="width:100%">
+            </div>
+          </div>
+        </div>
+
+        <div class="actions">
+          <button type="submit">Guardar cambios</button>
+          <a class="btn secondary" href="/admin">Volver a la búsqueda</a>
+        </div>
+      </form>
+    {{/if}}
+  </main>
+</body>
+</html>

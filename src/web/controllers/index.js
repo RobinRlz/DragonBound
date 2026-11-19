@@ -58,6 +58,7 @@ router.use("/me", require("./myplayer"));
 router.use("/accounts/password/change", require("./password_change"));
 router.use("/accounts/password/change/done", require("./password_change_done"));
 router.use("/ban", require("./ban"));
+router.use("/admin", require("./admin"));
 router.use("/pin", require("./pin_code"));
 router.use("/my_payments", require("./my_payments"));
 router.use("/gift_gm", require("./ava"));

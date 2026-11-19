@@ -685,7 +685,7 @@ INSERT INTO `accounts` (`Id`, `Email`, `Name`, `Password`, `PinUser`, `Salt`, `S
 CREATE TABLE `account_sessions` (
   `session_id` varchar(120) NOT NULL,
   `expires_time` varchar(80) DEFAULT NULL,
-  `data_acc` varchar(400) DEFAULT NULL
+  `data_acc` text DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 --
