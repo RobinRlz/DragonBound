@@ -1,237 +1,479 @@
 <!DOCTYPE html>
-<html>
+<html lang="es">
 
 <head>
     <meta charset="utf-8">
-    <title>My Settings - FunnyBound</title>
-    <script src="/static/js/jquery-2.1.4.min.js"></script>
-    <script src="/static/js/QTransform.js"></script>
-    <link rel="stylesheet" href="/static/DragonBook/DragonBook.min.css?15" />
-    <script src="/static/DragonBook/DragonBook.min.js?14"></script>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="csrf-token" content="{{csrfToken}}">
+    <title>Mi configuración · DragonBound</title>
+    <link rel="icon" href="/favicon.ico">
     <style>
+        :root {
+            --night-0: #06091a;
+            --night-1: #0d1330;
+            --night-2: #161e46;
+            --night-3: #222c62;
+            --indigo: #3e50a0;
+            --gold: #f2c14e;
+            --gold-soft: #e8b84a;
+            --gold-deep: #c8902a;
+            --cream: #f6ead0;
+            --text: #e7e9f6;
+            --muted: #a9b0d6;
+            --ok: #5fd38d;
+            --err: #ff7a7a;
+            --radius: 16px;
+        }
+
+        * { box-sizing: border-box; }
+        [hidden] { display: none !important; }
+
+        html, body { margin: 0; }
+
         body {
-            background: #3364a6 url('/static/images/aqua_bg.jpg') no-repeat center center fixed;
-            background-size: cover;
+            min-height: 100vh;
+            color: var(--text);
+            font: 15px/1.5 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+            background: var(--night-1) url("/static/images/themes/nochedorada/bg_full.jpg?4") center bottom / cover fixed no-repeat;
+        }
+
+        a { color: var(--gold-soft); text-decoration: none; }
+        a:hover { color: var(--gold); text-decoration: underline; }
+
+        /* --- Barra superior --- */
+        .topbar {
+            position: sticky;
+            top: 0;
+            z-index: 5;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 12px;
+            padding: 12px 20px;
+            background: linear-gradient(180deg, rgba(13, 19, 48, .95), rgba(13, 19, 48, .8));
+            border-bottom: 1px solid rgba(242, 193, 78, .35);
+            backdrop-filter: blur(6px);
+        }
+        .brand {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-weight: 800;
+            letter-spacing: .5px;
+            color: var(--gold);
+            text-shadow: 0 2px 0 #000;
+            font-size: 18px;
+        }
+        .brand small { color: var(--muted); font-weight: 600; text-shadow: none; font-size: 14px; }
+        .nav { display: flex; flex-wrap: wrap; gap: 6px; font-size: 14px; }
+        .nav a {
+            padding: 6px 12px;
+            border-radius: 999px;
+            color: var(--cream);
+            border: 1px solid transparent;
+        }
+        .nav a:hover { text-decoration: none; border-color: rgba(242, 193, 78, .45); background: rgba(242, 193, 78, .08); }
+        .nav a.play {
+            color: #2a1a00;
+            font-weight: 700;
+            background: linear-gradient(180deg, #ffd97a, #f2c14e 45%, #c8902a);
+            border-color: #8a5f12;
+        }
+        .nav a.play:hover { filter: brightness(1.08); }
+
+        /* --- Contenido --- */
+        main { max-width: 820px; margin: 0 auto; padding: 28px 16px 60px; }
+
+        h1 {
+            margin: 0 0 4px;
+            font-size: 28px;
+            color: var(--cream);
+            letter-spacing: .3px;
+            text-shadow: 0 2px 0 #000, 0 0 20px rgba(242, 193, 78, .25);
+        }
+        .lead { margin: 0 0 22px; color: var(--muted); }
+
+        .flash {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+            margin-bottom: 18px;
+            padding: 12px 16px;
+            border-radius: 12px;
+            font-weight: 600;
+            border: 1px solid;
+        }
+        .flash.ok { color: var(--ok); background: rgba(95, 211, 141, .1); border-color: rgba(95, 211, 141, .4); }
+        .flash.error { color: var(--err); background: rgba(255, 122, 122, .1); border-color: rgba(255, 122, 122, .45); }
+
+        .card {
+            position: relative;
+            margin-bottom: 18px;
+            padding: 22px 24px;
+            border-radius: var(--radius);
+            background: linear-gradient(180deg, rgba(34, 44, 98, .92), rgba(13, 19, 48, .94));
+            border: 1px solid rgba(242, 193, 78, .45);
+            box-shadow: 0 0 0 4px rgba(6, 9, 26, .55), 0 20px 40px rgba(0, 0, 0, .45);
+        }
+        .card h2 {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin: 0 0 4px;
+            font-size: 18px;
+            color: var(--gold);
+        }
+        .card h2 .ico { font-size: 20px; }
+        .card .sub { margin: 0 0 18px; color: var(--muted); font-size: 14px; }
+
+        /* --- Foto de perfil --- */
+        .photo-row { display: grid; grid-template-columns: 168px 1fr; gap: 24px; align-items: center; }
+        .avatar {
+            position: relative;
+            width: 168px;
+            height: 168px;
+            border-radius: 22px;
+            overflow: hidden;
+            background: radial-gradient(circle at 50% 35%, #2b3878, #0d1330 75%);
+            box-shadow: 0 0 0 3px var(--gold-deep), 0 0 0 7px rgba(6, 9, 26, .8), 0 12px 30px rgba(0, 0, 0, .5);
+        }
+        .avatar img { width: 100%; height: 100%; object-fit: cover; display: block; }
+        .avatar .initial {
+            position: absolute;
+            inset: 0;
+            display: grid;
+            place-items: center;
+            font-size: 64px;
+            font-weight: 800;
+            color: var(--gold);
+            text-shadow: 0 3px 0 #000;
+        }
+        .avatar.busy::after {
+            content: "";
+            position: absolute;
+            inset: 0;
+            background: rgba(6, 9, 26, .55) url("/static/images/loader200.gif") center / 48px no-repeat;
+        }
+
+        .drop {
+            display: block;
+            padding: 20px;
+            border: 2px dashed rgba(242, 193, 78, .5);
+            border-radius: 14px;
+            text-align: center;
+            cursor: pointer;
+            background: rgba(6, 9, 26, .35);
+            transition: border-color .15s, background .15s;
+        }
+        .drop:hover, .drop.over { border-color: var(--gold); background: rgba(242, 193, 78, .08); }
+        .drop strong { color: var(--cream); display: block; font-size: 16px; }
+        .drop span { color: var(--muted); font-size: 13px; }
+        .drop input { position: absolute; width: 1px; height: 1px; opacity: 0; pointer-events: none; }
+        .drop:focus-within { outline: 2px solid var(--gold); outline-offset: 2px; }
+
+        .photo-actions { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; margin-top: 12px; }
+        .status { min-height: 22px; margin-top: 10px; font-size: 14px; font-weight: 600; }
+        .status.ok { color: var(--ok); }
+        .status.error { color: var(--err); }
+
+        details { margin-top: 14px; }
+        summary { cursor: pointer; color: var(--muted); font-size: 14px; }
+        summary:hover { color: var(--cream); }
+
+        /* --- Formularios --- */
+        label.field { display: block; margin-bottom: 6px; font-weight: 600; color: var(--cream); }
+        .hint { margin: 6px 0 0; color: var(--muted); font-size: 13px; }
+        input[type="url"], input[type="text"] {
+            width: 100%;
+            padding: 11px 14px;
+            font: inherit;
+            color: var(--cream);
+            background: rgba(6, 9, 26, .65);
+            border: 1px solid rgba(242, 193, 78, .45);
+            border-radius: 10px;
+            box-shadow: inset 0 2px 6px rgba(0, 0, 0, .5);
+            outline: none;
+            transition: border-color .15s, box-shadow .15s;
+        }
+        input::placeholder { color: rgba(231, 233, 246, .4); }
+        input:focus { border-color: var(--gold); box-shadow: inset 0 2px 6px rgba(0, 0, 0, .5), 0 0 0 3px rgba(242, 193, 78, .22); }
+
+        .bg-preview {
+            margin-top: 12px;
+            height: 120px;
+            border-radius: 12px;
+            border: 1px solid rgba(242, 193, 78, .35);
+            background: #0d1330 center / cover no-repeat;
+        }
+
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 10px 20px;
+            font: inherit;
+            font-weight: 700;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: filter .12s, transform .08s;
+        }
+        .btn:active { transform: translateY(1px); }
+        .btn-gold {
+            color: #2a1a00;
+            background: linear-gradient(180deg, #ffd97a 0%, #f2c14e 45%, #c8902a 100%);
+            border: 1px solid #8a5f12;
+            box-shadow: 0 2px 0 #6b4708, inset 0 1px 0 rgba(255, 255, 255, .55);
+        }
+        .btn-gold:hover { filter: brightness(1.08); }
+        .btn-ghost {
+            color: var(--cream);
+            background: rgba(6, 9, 26, .4);
+            border: 1px solid rgba(242, 193, 78, .45);
+        }
+        .btn-ghost:hover { background: rgba(242, 193, 78, .1); }
+        .btn-danger { color: #ffb3b3; background: rgba(120, 20, 30, .25); border: 1px solid rgba(255, 122, 122, .45); }
+        .btn-danger:hover { background: rgba(160, 30, 40, .35); }
+        .row-end { display: flex; justify-content: flex-end; margin-top: 16px; }
+
+        /* --- Seguridad --- */
+        .list { display: grid; gap: 12px; }
+        .item {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 16px;
+            padding: 14px 16px;
+            border-radius: 12px;
+            background: rgba(6, 9, 26, .35);
+            border: 1px solid rgba(169, 176, 214, .18);
+        }
+        .item b { color: var(--cream); }
+        .item .meta { color: var(--muted); font-size: 13px; }
+
+        footer { text-align: center; color: var(--muted); font-size: 13px; padding-bottom: 30px; }
+
+        @media (max-width: 620px) {
+            .topbar { flex-direction: column; align-items: flex-start; }
+            .photo-row { grid-template-columns: 1fr; justify-items: center; }
+            .item { flex-direction: column; align-items: flex-start; }
+            h1 { font-size: 24px; }
         }
     </style>
 </head>
 
 <body>
-    <div id="fb-root"></div>
-    <div id="titleTable">
-        <div id="titleTableLeft" class="cell">
-            <span id="icon"></span> <span id="titleText"><a href="/">FunnyBound</a> > My Settings</span>
-        </div>
-        <div id="titleTableRight" class="cell right">
-            <a href="/user/{{game_id}}">{{game_id}}</a> | <a href="/settings">Settings</a> | <a href="/logout?next=/settings">Logout</a>
-        </div>
-    </div>
-    <div id="body">
-        <style>
-            #mainBox {
-                width: 850px;
-                margin: 0 auto;
-            }
-            
-            .boxTitle {
-                color: #6a7480;
-                height: 36px;
-                border-bottom: 1px solid #e9eaed;
-                font-size: 15px;
-                font-weight: 700;
-                line-height: 38px;
-                padding-left: 15px;
-                background-color: rgba(255, 255, 255, 0.5);
-            }
-            
-            .Box {
-                border: 1px solid #dde;
-                background-color: rgba(255, 255, 255, 0.5);
-                margin-bottom: 15px;
-                border-radius: 3px;
-                color: #000;
-            }
-            
-            .boxBody {
-                padding: 15px;
-                color: #37404e;
-                text-align: left;
-            }
-            
-            @media (max-width: 900px) {
-            #mainBox {
-                width: 500px;
-            }
-		
-            .boxBody {
-                font-size: 12px;
-            }
-		
-            table {
-                width: 100%;
-            }
-            
-            td {
-                padding: 3px;
-            }
-            
-            a {
-                color: inherit;
-            }
-            
-            a:hover {
-                background-color: rgba(255, 255, 255, 0.5);
-                text-decoration: underline;
-            }
-            
-            input {
-                width: 250px;
-            }
-            .Female {
-                color: hotpink;
-            }
-            .Male {
-                color: deepskyblue;
-            }
-            .ES {
-                display: none;
-            }
-        </style>
-        <div id="mainBox">
-            <div class="Box">
-                <div class="boxTitle">Settings</div>
-                <div class="boxBody">
-                    <form method="post">
-                        <input type='hidden' name='_csrf' value='{{csrfToken}}' />
-                        <table>
-                            <tr>
-                                <th><label for="id_wall_post_perm">[NEW] Who can post to my wall:</label></th>
-                                <td><select id="id_wall_post_perm" name="wall_post_perm">
-                                    <option value="e" selected="selected">Everyone</option>
-                                    <option value="f">Friends</option>
-                                    <option value="m">Only Me</option>
-                                    </select>
-                                </td>
-                            </tr>
-                            <tr>
-                                <th><label for="id_country_privacy">Country:</label></th>
-                                <td><select id="id_country_privacy" name="country_privacy">
-                                    <option value="e" selected="selected">Public</option>
-                                    <option value="m">PRIVATE</option>
-                                    </select>
-                                </td>
-                            </tr>
-                            <tr>
-                                <th><label for="id_relationship_privacy">Relationship Status:</label></th>
-                                <td><select id="id_relationship_privacy" name="relationship_privacy">
-                                    <option value="e" selected="selected">Public</option>
-                                    <option value="m">PRIVATE</option>
-                                    </select>
-                                </td>
-                            </tr>
-                            <tr>
-                                <th><label for="id_photo_privacy">My Photo:</label></th>
-                                <td><select id="id_photo_privacy" name="photo_privacy">
-                                    <option value="e" selected="selected">Public</option>
-                                    <option value="m">PRIVATE</option>
-                                    </select>
-                                </td>
-                            </tr>
-                            <tr>
-                                <th><label for="id_photo_url">My Photo URL:</label></th>
-                                <td><input id="id_photo_url" name="photo_url" type="url" value="{{photo_url}}" /><br/><span class="helptext">160x160. Blank = Use facebook photo</span></td>
-                            </tr>
-                            <tr>
-                                <th><label for="id_page_bg_url">My page background image URL:</label></th>
-                                <td><input id="id_page_bg_url" name="page_bg_url" type="url" value="{{bg_url}}" /></td>
-                            </tr>
-                            <tr>
-                                <td></td>
-                                <td>
-                                    <input type="submit" value="Save" style="padding: 10px 80px" />
-                                </td>
-                            </tr>
-                        </table>
-                    </form>
-                </div>
-            </div>
-            <div class="Box">
-                <div class="boxTitle">Change Password</div>
-                <div class="boxBody">
-                    <a href="/accounts/password/change">Change Password</a>
-                </div>
-            </div>
-            <div class="Box">
-                <div class="boxTitle T">Cambiar Email</div>
-                <div class="boxBody">
-                    <span class="T">Email Actual</span>: <b>{{correo}}</b><br>
-                    <br>
-                <div class="T">Por la seguridad de tu cuenta, asegurate que tú y solamente tú tengas acceso al correo electrónico de la cuenta.</div><br>
-                    <a href="/change_email" class="T">Cambiar Email</a>
-                </div>
-            </div>
-            <!--<div class="Box">
-                <div class="boxTitle"><span class="blackShadow T" style="color:yellow">[Nuevo]</span> <span class="T">Cambio de Género</span></div>
-                    <div class="boxBody">
-                    <span class="T">Género Actual</span>:
-                    <span class="Male blackShadow T">{{gender}}</span>
-                    &nbsp; &nbsp; &nbsp; <a href="/change_gender">[<span class="T">Cambio</span>]</a>
-                </div>
-            </div>-->
-            <div class="Box">
-                <div class="boxTitle">Unban users from your page</div>
-                <div class="boxBody">
-                    <form method="POST">
-                        <input type='hidden' name='_csrf' value='{{csrfToken}}' /> When
-                        you ban people from posting to your page you will see them here and be able to remove the ban.
-                    </form>
-                </div>
-            </div>
-        </div>
-        <br>
-        <br>
-        <br>
-            <script>
-                function GetLanguage() {
-                    if (localStorage.myLang == 'es' || localStorage.lang == '0')
-                        return 'es'
-                    var l = navigator.language || navigator.userLanguage
-                    if (l.indexOf('es') == 0)
-                        return 'es'
-                    else
-                        return 'en'
-                }
-                var lang = GetLanguage()
+    <header class="topbar">
+        <div class="brand">DragonBound <small>· Configuración</small></div>
+        <nav class="nav">
+            <a href="/user/{{game_id}}">👤 Mi perfil</a>
+            <a href="/logout?next=/settings">Cerrar sesión</a>
+            <a class="play" href="/">⚔️ Volver al juego</a>
+        </nav>
+    </header>
 
-                var TRANSLATE = {
-                    'Settings': 'Configuración',
-                    'Change Password': 'Cambiar Contraseña',
-                    'Change Email': 'Cambiar Email',
-                    'Current Email': 'Email Actual',
-                    'To secure your account make sure you and only you have an access to the email address of the account.': 'Por la seguridad de tu cuenta, asegurate que tú y solamente tú tengas acceso al correo electrónico de la cuenta.',
-                    '[NEW]': '[Nuevo]',
-                    'Change Gender': 'Cambio de Género',
-                    'Current Gender': 'Género Actual',
-                    'Female': 'Mujer',
-                    'Male': 'Hombre',
-                    'Change': 'Cambio',
-                    'Unban users from your page': 'Desbanear usuarios de tu página',
-                    'When you ban people from posting to your page you will see them here and be able to remove the ban.': 'Cuando baneas a usuarios a postear en tu página, los verás aquí y podrás eliminar el baneo.',
-                }
-                function T(s) {
-                    return TRANSLATE[s] || s
-                }
+    <main>
+        <h1>Hola, {{game_id}}</h1>
+        <p class="lead">Personaliza tu perfil y mantén tu cuenta segura.</p>
 
-                if (lang == 'es') {
-                    $('.EN').hide()
-                    $('.ES').show()
-                    $('.T').each(function(a) {
-                        var elem = $(this)
-                        elem.html(T(elem.html()))
+        {{#if flash}}
+        <div class="flash {{flash.type}}" role="status">{{flash.msg}}</div>
+        {{/if}}
+
+        <!-- Foto de perfil -->
+        <section class="card" aria-labelledby="t-photo">
+            <h2 id="t-photo"><span class="ico">🖼️</span> Foto de perfil</h2>
+            <p class="sub">Se muestra en el lobby, en las salas y en tu perfil.</p>
+
+            <div class="photo-row">
+                <div class="avatar" id="avatar" data-name="{{game_id}}">
+                    {{#if photo_url}}
+                    <img id="avatarImg" src="{{photo_url}}" alt="Tu foto de perfil">
+                    {{else}}
+                    <img id="avatarImg" alt="Tu foto de perfil" hidden>
+                    {{/if}}
+                    <div class="initial" id="avatarInitial" {{#if photo_url}}hidden{{/if}}></div>
+                </div>
+
+                <div>
+                    <label class="drop" id="drop">
+                        <input type="file" id="photoFile" accept="image/png,image/jpeg,image/webp,image/gif">
+                        <strong>Subir una foto</strong>
+                        <span>Arrastra una imagen aquí o haz clic · JPG, PNG, WebP o GIF · hasta 8&nbsp;MB</span>
+                    </label>
+                    <div class="photo-actions">
+                        <span class="hint" style="margin:0">Se recorta en cuadrado y se ajusta automáticamente.</span>
+                    </div>
+                    <div class="status" id="photoStatus" role="status" aria-live="polite"></div>
+
+                    <form method="post" action="/settings/photo/remove" id="removeForm" {{#unless photo_url}}hidden{{/unless}}>
+                        <input type="hidden" name="_csrf" value="{{csrfToken}}">
+                        <button type="submit" class="btn btn-danger">Quitar foto</button>
+                    </form>
+
+                    <details>
+                        <summary>Prefiero usar el enlace de una imagen</summary>
+                        <form method="post" action="/settings" style="margin-top:10px">
+                            <input type="hidden" name="_csrf" value="{{csrfToken}}">
+                            <input type="hidden" name="page_bg_url" value="{{bg_url}}">
+                            <label class="field" for="photo_url">URL de la foto</label>
+                            <input id="photo_url" name="photo_url" type="url" maxlength="200" placeholder="https://…/mi-foto.png" value="{{#unless photo_uploaded}}{{photo_url}}{{/unless}}">
+                            <p class="hint">Déjalo vacío para no usar foto. Lo ideal es una imagen cuadrada (160×160 o más).</p>
+                            <div class="row-end"><button type="submit" class="btn btn-ghost">Usar este enlace</button></div>
+                        </form>
+                    </details>
+                </div>
+            </div>
+        </section>
+
+        <!-- Fondo de la página -->
+        <section class="card" aria-labelledby="t-bg">
+            <h2 id="t-bg"><span class="ico">🌄</span> Fondo de tu página</h2>
+            <p class="sub">La imagen de fondo que ven los demás al visitar tu perfil.</p>
+            <form method="post" action="/settings">
+                <input type="hidden" name="_csrf" value="{{csrfToken}}">
+                <label class="field" for="page_bg_url">URL de la imagen</label>
+                <input id="page_bg_url" name="page_bg_url" type="url" maxlength="200" placeholder="https://…/fondo.jpg" value="{{bg_url}}">
+                <p class="hint">Déjalo vacío para usar el fondo por defecto.</p>
+                <div class="bg-preview" id="bgPreview" aria-hidden="true"></div>
+                <div class="row-end"><button type="submit" class="btn btn-gold">Guardar fondo</button></div>
+            </form>
+        </section>
+
+        <!-- Seguridad -->
+        <section class="card" aria-labelledby="t-sec">
+            <h2 id="t-sec"><span class="ico">🛡️</span> Seguridad de la cuenta</h2>
+            <p class="sub">Asegúrate de que solo tú tengas acceso al correo de tu cuenta.</p>
+            <div class="list">
+                <div class="item">
+                    <div>
+                        <b>Contraseña</b>
+                        <div class="meta">Cámbiala si crees que alguien más la conoce.</div>
+                    </div>
+                    <a class="btn btn-ghost" href="/accounts/password/change">Cambiar contraseña</a>
+                </div>
+                <div class="item">
+                    <div>
+                        <b>Correo electrónico</b>
+                        <div class="meta">{{#if correo}}Actual: {{correo}}{{else}}Todavía no tienes un correo asociado.{{/if}}</div>
+                    </div>
+                    <a class="btn btn-ghost" href="/change_email">{{#if correo}}Cambiar correo{{else}}Añadir correo{{/if}}</a>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <footer>ID de cuenta #{{user_id}}</footer>
+
+    <script>
+        (function () {
+            var token = document.querySelector('meta[name="csrf-token"]').content;
+            var avatar = document.getElementById('avatar');
+            var img = document.getElementById('avatarImg');
+            var initial = document.getElementById('avatarInitial');
+            var status = document.getElementById('photoStatus');
+            var drop = document.getElementById('drop');
+            var input = document.getElementById('photoFile');
+            var removeForm = document.getElementById('removeForm');
+            var SIZE = 256;            // la foto se guarda a 256x256 (nítida también en pantallas HD)
+            var MAX_INPUT = 8 * 1024 * 1024;
+
+            initial.textContent = (avatar.getAttribute('data-name') || '?').charAt(0).toUpperCase();
+
+            // Si la foto actual no carga (enlace roto), se muestra la inicial
+            img.addEventListener('error', function () { img.hidden = true; initial.hidden = false; });
+
+            function setStatus(type, msg) {
+                status.className = 'status ' + (type || '');
+                status.textContent = msg || '';
+            }
+
+            function loadImage(file) {
+                return new Promise(function (resolve, reject) {
+                    var url = URL.createObjectURL(file);
+                    var im = new Image();
+                    im.onload = function () { resolve(im); };
+                    im.onerror = function () { URL.revokeObjectURL(url); reject(new Error('decode')); };
+                    im.src = url;
+                });
+            }
+
+            function squareJpeg(im) {
+                var c = document.createElement('canvas');
+                c.width = c.height = SIZE;
+                var ctx = c.getContext('2d');
+                var s = Math.min(im.naturalWidth, im.naturalHeight);
+                var sx = (im.naturalWidth - s) / 2, sy = (im.naturalHeight - s) / 2;
+                ctx.fillStyle = '#0d1330';  // fondo para imágenes con transparencia
+                ctx.fillRect(0, 0, SIZE, SIZE);
+                ctx.imageSmoothingQuality = 'high';
+                ctx.drawImage(im, sx, sy, s, s, 0, 0, SIZE, SIZE);
+                return new Promise(function (resolve) { c.toBlob(resolve, 'image/jpeg', 0.9); });
+            }
+
+            function upload(file) {
+                if (!file) return;
+                if (!/^image\/(png|jpe?g|webp|gif)$/.test(file.type)) {
+                    return setStatus('error', 'Ese archivo no es una imagen JPG, PNG, WebP o GIF.');
+                }
+                if (file.size > MAX_INPUT) {
+                    return setStatus('error', 'La imagen pesa más de 8 MB. Prueba con una más pequeña.');
+                }
+                setStatus('', 'Preparando la imagen…');
+                avatar.classList.add('busy');
+                loadImage(file)
+                    .then(squareJpeg)
+                    .then(function (blob) {
+                        setStatus('', 'Subiendo…');
+                        return fetch('/settings/photo', {
+                            method: 'POST',
+                            credentials: 'same-origin',
+                            headers: { 'Content-Type': 'image/jpeg', 'CSRF-Token': token },
+                            body: blob
+                        });
                     })
-                }
-            </script>
-    </div>
+                    .then(function (res) {
+                        return res.json().catch(function () { return { ok: false, error: 'Respuesta inesperada del servidor (' + res.status + ').' }; });
+                    })
+                    .then(function (data) {
+                        if (!data.ok) throw new Error(data.error || 'No se pudo subir la foto.');
+                        img.src = data.url;
+                        img.hidden = false;
+                        initial.hidden = true;
+                        removeForm.hidden = false;
+                        setStatus('ok', '¡Foto actualizada! En el juego se verá la próxima vez que entres.');
+                    })
+                    .catch(function (err) {
+                        setStatus('error', err.message === 'decode' ? 'No se pudo leer la imagen.' : err.message);
+                    })
+                    .then(function () {
+                        avatar.classList.remove('busy');
+                        input.value = '';
+                    });
+            }
+
+            input.addEventListener('change', function () { upload(input.files[0]); });
+            ['dragenter', 'dragover'].forEach(function (ev) {
+                drop.addEventListener(ev, function (e) { e.preventDefault(); drop.classList.add('over'); });
+            });
+            ['dragleave', 'drop'].forEach(function (ev) {
+                drop.addEventListener(ev, function (e) { e.preventDefault(); drop.classList.remove('over'); });
+            });
+            drop.addEventListener('drop', function (e) {
+                var f = e.dataTransfer && e.dataTransfer.files && e.dataTransfer.files[0];
+                upload(f);
+            });
+
+            // Vista previa del fondo mientras escribes la URL
+            var bgInput = document.getElementById('page_bg_url');
+            var bgPreview = document.getElementById('bgPreview');
+            function showBg() {
+                var v = bgInput.value.trim();
+                bgPreview.style.backgroundImage = /^https?:\/\//i.test(v) ? 'url("' + v.replace(/["\\]/g, '') + '")' : '';
+            }
+            bgInput.addEventListener('input', showBg);
+            showBg();
+        })();
+    </script>
 </body>
 
 </html>
