@@ -1,0 +1,192 @@
+/* ==========================================================================
+   Tema "Noche Dorada"
+   Capa CSS para lo que el juego dibuja con HTML (texto, formularios, ventanas).
+   Solo se aplica cuando el tema está activo: body.tNocheDorada (lo pone el
+   cliente en DragonTheme.SetTheme). Los sprites salen de
+   images/themes/nochedorada/, generados por scripts/theme-noche-dorada/build.py.
+   ========================================================================== */
+
+body.tNocheDorada {
+  --nd-night-0: #06091a;
+  --nd-night-1: #0d1330;
+  --nd-night-2: #161e46;
+  --nd-night-3: #222c62;
+  --nd-indigo: #3e50a0;
+  --nd-gold: #f2c14e;
+  --nd-gold-soft: #e8b84a;
+  --nd-gold-deep: #c8902a;
+  --nd-cream: #f6ead0;
+  --nd-text: #e7e9f6;
+  --nd-muted: #a9b0d6;
+  --nd-panel: linear-gradient(180deg, rgba(34, 44, 98, .96) 0%, rgba(13, 19, 48, .97) 100%);
+  --nd-ring: 0 0 0 1px rgba(242, 193, 78, .55), 0 0 0 3px rgba(6, 9, 26, .9);
+  --nd-shadow: 0 18px 40px rgba(0, 0, 0, .55), 0 0 30px rgba(242, 193, 78, .08);
+  background-color: var(--nd-night-1);
+  background-size: cover;
+  background-position: center bottom;
+}
+
+/* --- Ventanas genéricas ------------------------------------------------- */
+body.tNocheDorada .DragonWindow,
+body.tNocheDorada #OptionsDialog {
+  background: var(--nd-panel);
+  border: 1px solid var(--nd-gold-deep);
+  border-radius: 12px;
+  box-shadow: var(--nd-shadow), inset 0 1px 0 rgba(255, 255, 255, .08);
+  color: var(--nd-text);
+}
+
+/* --- Acceso / registro -------------------------------------------------- */
+body.tNocheDorada #LoginWindowBG {
+  background: radial-gradient(ellipse at center, rgba(6, 9, 26, .35) 0%, rgba(6, 9, 26, .75) 100%);
+}
+body.tNocheDorada #LoginWindow {
+  background-image:
+    radial-gradient(ellipse 60% 40% at 50% 115%, rgba(242, 193, 78, .22) 0%, rgba(242, 193, 78, 0) 70%),
+    linear-gradient(160deg, #24306a 0%, #121a40 55%, #090e26 100%);
+  border: 2px solid var(--nd-gold-deep);
+  border-radius: 18px;
+  box-shadow: 0 0 0 4px rgba(6, 9, 26, .85), 0 25px 60px rgba(0, 0, 0, .7), 0 0 60px rgba(242, 193, 78, .12);
+}
+body.tNocheDorada #LoginWindow #loginTitle,
+body.tNocheDorada #LoginWindow #registerTitle {
+  color: var(--nd-gold);
+  letter-spacing: .5px;
+  text-shadow: 0 2px 0 #000, 0 0 14px rgba(242, 193, 78, .35);
+}
+body.tNocheDorada #LoginSap {
+  background: linear-gradient(180deg, rgba(242, 193, 78, 0), rgba(242, 193, 78, .7) 50%, rgba(242, 193, 78, 0));
+  width: 2px;
+  border: 0;
+}
+body.tNocheDorada #LoginWindow a { color: var(--nd-gold-soft); }
+
+/* Campos de texto del juego (login, registro, crear sala, buscar...) */
+body.tNocheDorada .inputField,
+body.tNocheDorada #LoginWindow input[type="text"],
+body.tNocheDorada #LoginWindow input[type="password"],
+body.tNocheDorada #LoginWindow input[type="tel"],
+body.tNocheDorada #LoginWindow input[type="email"] {
+  background: rgba(6, 9, 26, .65);
+  color: var(--nd-cream);
+  border: 1px solid rgba(242, 193, 78, .45);
+  border-radius: 8px;
+  box-shadow: inset 0 2px 6px rgba(0, 0, 0, .5);
+  outline: none;
+  transition: border-color .15s, box-shadow .15s;
+}
+body.tNocheDorada .inputField::placeholder,
+body.tNocheDorada #LoginWindow input::placeholder { color: rgba(231, 233, 246, .45); }
+body.tNocheDorada .inputField:focus,
+body.tNocheDorada #LoginWindow input:focus {
+  border-color: var(--nd-gold);
+  box-shadow: inset 0 2px 6px rgba(0, 0, 0, .5), 0 0 0 3px rgba(242, 193, 78, .22);
+}
+
+/* --- Selector de servidor ---------------------------------------------- */
+body.tNocheDorada #BrokerWindow {
+  background:
+    radial-gradient(ellipse 70% 50% at 50% 110%, rgba(242, 193, 78, .14) 0%, rgba(242, 193, 78, 0) 70%),
+    linear-gradient(180deg, rgba(30, 40, 92, .97) 0%, rgba(10, 15, 38, .97) 100%);
+  border: 2px solid var(--nd-gold-deep);
+  box-shadow: 0 0 0 4px rgba(6, 9, 26, .8), 0 25px 60px rgba(0, 0, 0, .7);
+}
+body.tNocheDorada #BrokerPlayer {
+  background: linear-gradient(180deg, #2c387a 0%, #141c44 100%);
+  border: 2px solid var(--nd-gold-deep);
+  border-bottom: 0;
+  color: var(--nd-cream);
+}
+body.tNocheDorada #BrokerTitle {
+  color: var(--nd-gold);
+  text-shadow: 0 2px 0 #000, 0 0 12px rgba(242, 193, 78, .35);
+}
+body.tNocheDorada .BrokerChannel {
+  background-image: url(/static/images/themes/nochedorada/servers.png?2);
+  border-radius: 6px;
+  transition: transform .12s ease, filter .12s ease;
+}
+body.tNocheDorada .BrokerChannelOnline:hover {
+  transform: translateY(-2px);
+  filter: drop-shadow(0 6px 10px rgba(242, 193, 78, .25));
+}
+body.tNocheDorada .BrokerChannelName { color: var(--nd-cream); }
+
+/* --- Lobby --------------------------------------------------------------- */
+body.tNocheDorada #myInfoBox {
+  background: linear-gradient(180deg, rgba(34, 44, 98, .55), rgba(6, 9, 26, .55));
+  box-shadow: inset 0 0 0 1px rgba(242, 193, 78, .35);
+}
+body.tNocheDorada #channelName { color: var(--nd-gold); }
+body.tNocheDorada #channelTextHtml,
+body.tNocheDorada #channel,
+body.tNocheDorada #channelInput { color: #cfe3ff; }
+body.tNocheDorada #channelInput::placeholder { color: rgba(207, 227, 255, .45); }
+
+/* Desplegables (canal de chat, tema, filtros...) */
+body.tNocheDorada select {
+  background: #121a40;
+  color: var(--nd-cream);
+  border: 1px solid rgba(242, 193, 78, .5);
+  border-radius: 4px;
+}
+body.tNocheDorada select option { background: #121a40; color: var(--nd-cream); }
+
+/* Barras de desplazamiento */
+body.tNocheDorada .DragonScroll::-webkit-scrollbar { width: 9px; height: 9px; }
+body.tNocheDorada .DragonScroll::-webkit-scrollbar-track { background: rgba(6, 9, 26, .5); border-radius: 8px; }
+body.tNocheDorada .DragonScroll::-webkit-scrollbar-thumb {
+  background: linear-gradient(180deg, var(--nd-gold), var(--nd-gold-deep));
+  border-radius: 8px;
+  border: 2px solid rgba(6, 9, 26, .6);
+}
+body.tNocheDorada .DragonScroll { scrollbar-color: var(--nd-gold-deep) rgba(6, 9, 26, .5); }
+
+/* --- Opciones ------------------------------------------------------------ */
+body.tNocheDorada #OptionsDialog { color: var(--nd-text); }
+body.tNocheDorada #OptionsDialog .OptionTitle1 { color: var(--nd-gold); }
+
+/* Selector de canal del chat del lobby (tiene su propio color por id) */
+body.tNocheDorada #lobby_channel {
+  background: #121a40;
+  color: var(--nd-cream);
+  border: 1px solid rgba(242, 193, 78, .55);
+  border-radius: 4px;
+}
+
+/* Botones principales del acceso: dorado (mismo lenguaje que Cash / Oro de la tienda) */
+body.tNocheDorada #LoginSubmit,
+body.tNocheDorada #RegisterSubmit {
+  background: linear-gradient(180deg, #ffd97a 0%, #f2c14e 45%, #c8902a 100%);
+  color: #2a1a00;
+  font-weight: bold;
+  text-shadow: 0 1px 0 rgba(255, 240, 200, .6);
+  border: 1px solid #8a5f12;
+  box-shadow: 0 2px 0 #6b4708, 0 4px 14px rgba(242, 193, 78, .25), inset 0 1px 0 rgba(255, 255, 255, .55);
+  cursor: pointer;
+  transition: filter .12s, transform .08s;
+}
+body.tNocheDorada #LoginSubmit { border-radius: 8px; }
+body.tNocheDorada #LoginSubmit:hover,
+body.tNocheDorada #RegisterSubmit:hover { filter: brightness(1.08); }
+body.tNocheDorada #LoginSubmit:active,
+body.tNocheDorada #RegisterSubmit:active { transform: translateY(1px); box-shadow: 0 1px 0 #6b4708; }
+
+/* Sonido e idioma: insignias redondas a juego */
+body.tNocheDorada #LoginMute,
+body.tNocheDorada #LoginLang {
+  border: 2px solid var(--nd-gold-deep);
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, .5);
+}
+body.tNocheDorada #LoginMute { background-color: var(--nd-gold); }
+body.tNocheDorada #LoginLang { background-color: #24306a; color: var(--nd-gold); }
+
+/* Buscador de la tienda */
+body.tNocheDorada #shopFilterMyAvatar {
+  background: rgba(6, 9, 26, .65);
+  color: var(--nd-cream);
+  border: 1px solid rgba(242, 193, 78, .45);
+  border-radius: 6px;
+}
+body.tNocheDorada #shopFilterMyAvatar::placeholder { color: rgba(246, 234, 208, .5); }

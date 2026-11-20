@@ -34512,6 +34512,18 @@
         css: "",
       };
     CopyMissingProps(ThemeClassic, ThemeClassicHD);
+    // Tema "Noche Dorada": sprites del clásico recoloreados (scripts/theme-noche-dorada/build.py)
+    // + capa CSS en /static/css/theme-nochedorada.css, activa con body.tNocheDorada.
+    var ThemeNocheDorada = {
+        stuff_HD: "/static/images/themes/nochedorada/stuff_HD.png?4",
+        lobby_bg: "/static/images/themes/nochedorada/lobby_bg.png?4",
+        room_bg: "/static/images/themes/nochedorada/room_bg.png?4",
+        shop_bg: "/static/images/themes/nochedorada/shop_bg.png?4",
+        bg_full: "/static/images/themes/nochedorada/bg_full.jpg?4",
+        nochedorada: 1,
+        css: "",
+      };
+    CopyMissingProps(ThemeClassic, ThemeNocheDorada);
     var ThemeDB = {
         lobby_bg: ".",
         room_bg: ".",
@@ -34963,6 +34975,7 @@
         auto: ThemeClassic,
         classic: ThemeClassic,
         classicHD: ThemeClassicHD,
+        nochedorada: ThemeNocheDorada,
         thorshammer: ThemeThorsHammer,
         dragonbound: ThemeDB,
         halloween2015: ThemeHalloween2015,
@@ -35004,7 +35017,15 @@
             " "
           )),
         b = this;
-      this.SetThemeByName(localStorage.Theme || "auto");
+      // Migración única: quien estaba en el tema por defecto ("auto") pasa a Noche Dorada.
+      // Si después elige otro tema (incluido el clásico) se respeta su elección.
+      try {
+        if (!localStorage.ThemeNocheDoradaMigrado) {
+          (!localStorage.Theme || "auto" == localStorage.Theme) && (localStorage.Theme = "nochedorada");
+          localStorage.ThemeNocheDoradaMigrado = 1;
+        }
+      } catch (e) {}
+      this.SetThemeByName(localStorage.Theme || "nochedorada");
       $("#DragonThemeDialog .DragonWindowClose").click(function () {
         $("#DragonThemeDialog").hide();
       });
@@ -35101,6 +35122,8 @@
         this.SetThemeByName("custom"));
     };
     DragonTheme.prototype.SetTheme = function (a) {
+      // Sin tema (nombre desconocido o borrado) -> clásico, en vez de romper el arranque.
+      a = a || Themes.auto;
       this.selectedTheme = a;
       g_is_prix_server && (a = ThemeClassicHD);
       var b = (this.themeInUse = Object.assign(
@@ -35144,7 +35167,7 @@
           (b.HD = 1),
           (GAME_STUFF = GAME_STUFF_HD))
         : (GAME_STUFF = GAME_STUFF_SD);
-      $("body").toggleClass("SD", !v).toggleClass("HD", !!v);
+      $("body").toggleClass("SD", !v).toggleClass("HD", !!v).toggleClass("tNocheDorada", !!b.nochedorada);
       v =
         "\n    body {background-image: url(" +
         n +
