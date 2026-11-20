@@ -34515,11 +34515,11 @@
     // Tema "Noche Dorada": sprites del clásico recoloreados (scripts/theme-noche-dorada/build.py)
     // + capa CSS en /static/css/theme-nochedorada.css, activa con body.tNocheDorada.
     var ThemeNocheDorada = {
-        stuff_HD: "/static/images/themes/nochedorada/stuff_HD.png?4",
-        lobby_bg: "/static/images/themes/nochedorada/lobby_bg.png?4",
-        room_bg: "/static/images/themes/nochedorada/room_bg.png?4",
-        shop_bg: "/static/images/themes/nochedorada/shop_bg.png?4",
-        bg_full: "/static/images/themes/nochedorada/bg_full.jpg?4",
+        stuff_HD: "/static/images/themes/nochedorada/stuff_HD.png?7",
+        lobby_bg: "/static/images/themes/nochedorada/lobby_bg.png?5",
+        room_bg: "/static/images/themes/nochedorada/room_bg.png?5",
+        shop_bg: "/static/images/themes/nochedorada/shop_bg.png?5",
+        bg_full: "/static/images/themes/nochedorada/bg_full.jpg?5",
         nochedorada: 1,
         css: "",
       };

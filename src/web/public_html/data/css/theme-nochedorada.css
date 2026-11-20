@@ -190,3 +190,106 @@ body.tNocheDorada #shopFilterMyAvatar {
   border-radius: 6px;
 }
 body.tNocheDorada #shopFilterMyAvatar::placeholder { color: rgba(246, 234, 208, .5); }
+
+/* --- Sala --------------------------------------------------------------- */
+/* Cabecera de la sala: el cliente fija en línea los colores de AVATAR ON/OFF y del viento (verde/rojo),
+   así que no se tocan; se les da un contorno oscuro para que se lean sobre el panel azul noche. */
+body.tNocheDorada #roomInfo1,
+body.tNocheDorada #roomInfo2,
+body.tNocheDorada #roomInfo3,
+body.tNocheDorada #roomInfo4,
+body.tNocheDorada #room_game_mode,
+body.tNocheDorada #room_players,
+body.tNocheDorada #room_avatars,
+body.tNocheDorada #room_wind,
+body.tNocheDorada #room_turn_time_text,
+body.tNocheDorada #room_turn_time {
+  text-shadow: 0 0 2px #000, 0 0 3px #000, 0 1px 3px #000, 0 0 7px rgba(0, 0, 0, .9);
+}
+body.tNocheDorada #roomInfo2 { color: #62c4ff; } /* el azul #09f original se perdía sobre el fondo oscuro */
+
+/* Selector de móvil: el fondo al 75 % dejaba ver la sala por detrás (texto y ranuras mezclados con los iconos) */
+body.tNocheDorada #roomMobileSelect {
+  background: linear-gradient(180deg, rgba(22, 30, 70, .97), rgba(8, 12, 34, .98));
+  border: 1px solid var(--nd-gold-deep);
+  box-shadow: 0 0 0 4px rgba(6, 9, 26, .8), 0 24px 50px rgba(0, 0, 0, .6);
+}
+
+/* Descripción del modo en "Crear sala": el original usaba negro, ilegible sobre el panel oscuro */
+body.tNocheDorada #dialogCreateMessage { color: #d9dcf2; }
+
+/* --- Panel lateral de rankings -------------------------------------------- */
+body.tNocheDorada #ranking_panel {
+  background: linear-gradient(180deg, rgba(22, 30, 70, .96) 0%, rgba(6, 9, 26, .97) 100%);
+  border-right: 1px solid rgba(242, 193, 78, .55);
+  box-shadow: 8px 0 30px rgba(0, 0, 0, .55);
+  color: var(--nd-text);
+}
+body.tNocheDorada #ranking_title {
+  margin: 0 12px 6px;
+  padding: 12px 0 10px;
+  font-size: 15px;
+  letter-spacing: .6px;
+  color: var(--nd-gold);
+  text-shadow: 0 2px 0 #000, 0 0 14px rgba(242, 193, 78, .3);
+  border-bottom: 1px solid transparent;
+  border-image: linear-gradient(90deg, rgba(242, 193, 78, 0), rgba(242, 193, 78, .8), rgba(242, 193, 78, 0)) 1;
+}
+body.tNocheDorada #ranking_btns { padding: 4px 10px 10px; text-align: center; }
+body.tNocheDorada .ranking_btn {
+  margin: 3px 2px;
+  padding: 5px 11px;
+  font-size: 11px;
+  color: var(--nd-cream);
+  background: rgba(34, 44, 98, .9);
+  border: 1px solid rgba(242, 193, 78, .4);
+  border-radius: 999px;
+  transition: background .12s, color .12s, border-color .12s, transform .08s;
+}
+body.tNocheDorada .ranking_btn:hover {
+  background: linear-gradient(180deg, #ffd97a, #f2c14e 45%, #c8902a);
+  color: #2a1a00;
+  text-shadow: none;
+  border-color: #8a5f12;
+}
+body.tNocheDorada .ranking_btn:active { transform: translateY(1px); }
+body.tNocheDorada .ranking_btn.selected {
+  background: linear-gradient(180deg, #ffd97a, #f2c14e 45%, #c8902a);
+  color: #2a1a00;
+  text-shadow: none;
+  border-color: #8a5f12;
+}
+body.tNocheDorada #ranking_data2 { padding: 0 6px; }
+body.tNocheDorada #ranking_data table { border-collapse: collapse; }
+body.tNocheDorada #ranking_data tr:nth-child(even) { background: rgba(255, 255, 255, .04); }
+body.tNocheDorada #ranking_data tr:hover { background: rgba(242, 193, 78, .1); }
+body.tNocheDorada #ranking_data a { color: var(--nd-gold-soft); }
+
+/* Enlaces legales (Términos de Servicio / Privacy Policy) */
+body.tNocheDorada #toslink,
+body.tNocheDorada #pplink,
+body.tNocheDorada #toslink2,
+body.tNocheDorada #pplink2 {
+  color: var(--nd-muted);
+  font-size: 11px;
+  text-decoration: none;
+  text-shadow: none;
+  border-bottom: 1px dotted rgba(169, 176, 214, .5);
+}
+body.tNocheDorada #toslink:hover,
+body.tNocheDorada #pplink:hover,
+body.tNocheDorada #toslink2:hover,
+body.tNocheDorada #pplink2:hover {
+  color: var(--nd-gold);
+  border-bottom-color: var(--nd-gold);
+}
+
+/* Pestaña "Rankings" del borde izquierdo */
+body.tNocheDorada #ranking_panel_open {
+  color: var(--nd-gold);
+  background: linear-gradient(180deg, rgba(34, 44, 98, .95), rgba(13, 19, 48, .95));
+  border: 1px solid rgba(242, 193, 78, .55);
+  border-left: 0;
+  border-radius: 0 10px 10px 0;
+  text-shadow: 0 1px 0 #000;
+}

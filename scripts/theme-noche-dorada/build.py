@@ -55,7 +55,7 @@ def ramp(lum: np.ndarray) -> np.ndarray:
     return np.stack([np.interp(lum, RAMP_X, RAMP_C[:, c]) for c in range(3)], -1).astype(np.float32)
 
 
-def recolor(bgr: np.ndarray, neutral: bool = False, gold: float = 1.0) -> np.ndarray:
+def recolor(bgr: np.ndarray, neutral: bool = False, gold: float = 1.0, full: bool = False) -> np.ndarray:
     """Recolorea BGR uint8 hacia la paleta nocturna.
 
     neutral=True también lleva a la noche los grises/blancos (fondos de pantalla);
@@ -70,6 +70,8 @@ def recolor(bgr: np.ndarray, neutral: bool = False, gold: float = 1.0) -> np.nda
     hue_w = np.clip(1 - np.abs(h - 108) / 28, 0, 1) ** 0.6
     blue = hue_w * np.clip((s - 6) / 16, 0, 1)
     w = np.maximum(blue, np.clip(1 - s / 45, 0, 1)) if neutral else blue
+    if full:  # todo lo poco saturado pasa entero a la rampa nocturna (los colores vivos se conservan)
+        w = np.clip(1 - (s - 55) / 55, 0, 1)
 
     # Destino: rampa nocturna; los azules muy saturados (equipo B, iconos) conservan
     # su color, solo un poco más profundo, para no perder significado.
@@ -95,21 +97,75 @@ def recolor(bgr: np.ndarray, neutral: bool = False, gold: float = 1.0) -> np.nda
 ATLAS_SOFT = [
     (1570, 0, 2000, 186),
     (1570, 186, 1700, 365),
-    (0, 2630, 285, 2785),       # botones de disparo 1 / 2 / SS del HUD
+]
+
+# Marco de la ficha "My info": se pasa por la rampa nocturna completa (neutral) para que el
+# lavanda pálido del marco exterior combine con el resto de paneles.
+ATLAS_NEUTRAL = [
+    (0, 1805, 980, 2470),
+]
+
+# Botones de disparo 1 / 2 / SS del HUD: tinte aún más suave para que sus números oscuros sigan leyéndose.
+ATLAS_SOFT_LIGHT = [
+    (0, 2630, 285, 2785),
 ]
 
 
-def tint(bgr: np.ndarray) -> np.ndarray:
-    """Tinte suave: azul cielo -> índigo, algo más oscuro, mismo contraste relativo."""
+def tint(bgr: np.ndarray, dark: float = 0.30) -> np.ndarray:
+    """Tinte suave: azul cielo -> índigo, algo más oscuro (`dark`), mismo contraste relativo."""
     hsv = cv2.cvtColor(bgr, cv2.COLOR_BGR2HSV).astype(np.float32)
     blue = np.clip(1 - np.abs(hsv[..., 0] - 108) / 28, 0, 1) * np.clip((hsv[..., 1] - 6) / 16, 0, 1)
     hsv[..., 0] = np.clip(hsv[..., 0] + 9 * blue, 0, 179)
     hsv[..., 1] = np.clip(hsv[..., 1] * (1 + 0.15 * blue), 0, 255)
-    hsv[..., 2] = hsv[..., 2] * (1 - 0.30 * blue)
+    hsv[..., 2] = hsv[..., 2] * (1 - dark * blue)
     return cv2.cvtColor(hsv.astype(np.uint8), cv2.COLOR_HSV2BGR)
 
 
-def process(src: Path, dst: Path, keep=(), soft=(), **kw) -> None:
+# Rótulos oscuros incrustados en el atlas (texto navy sobre panel claro). Al oscurecer el panel
+# quedaban casi invisibles, así que se repintan en crema. (x0, y0, x1, y1) del atlas 2000x3000.
+ATLAS_LABELS = [
+    # Diálogo "Create Room"
+    (62, 722, 138, 764),     # Title
+    (62, 868, 342, 906),     # Number of Players
+    (62, 910, 244, 948),     # Game Mode
+    # Diálogo "Room Options"
+    (814, 1066, 994, 1104),  # Game Mode
+    (814, 1154, 918, 1192),  # Teams
+    (814, 1246, 886, 1284),  # Map
+    (814, 1454, 938, 1496),  # Avatars
+    (814, 1556, 966, 1596),  # Max Wind
+]
+
+# Flechas ◄ ► de los selectores (buttonPrev / buttonNext): triángulos índigo oscuros -> dorado.
+ATLAS_ARROWS = [
+    (1245, 658, 1275, 686),
+    (1284, 658, 1314, 686),
+]
+
+CREAM = np.array([208, 234, 246], np.float32)  # #F6EAD0 en BGR
+
+
+def brighten_labels(out: np.ndarray, orig: np.ndarray, rects) -> None:
+    """Texto oscuro -> crema. La opacidad sale de lo oscuro que era cada píxel en el original
+    (el halo claro y el panel no se tocan), y se mezcla sobre el panel ya recoloreado."""
+    for x0, y0, x1, y1 in rects:
+        lum = cv2.cvtColor(np.ascontiguousarray(orig[y0:y1, x0:x1]), cv2.COLOR_BGR2LAB)[..., 0].astype(np.float32)
+        a = np.clip((175.0 - lum) / 80.0, 0, 1)[..., None]
+        out[y0:y1, x0:x1] = out[y0:y1, x0:x1] * (1 - a) + CREAM * a
+
+
+def gild_arrows(out: np.ndarray, orig: np.ndarray, alpha: np.ndarray, rects) -> None:
+    """Pinta de dorado los píxeles del triángulo (opacos y no negros) dentro de cada rectángulo."""
+    for x0, y0, x1, y1 in rects:
+        sub = orig[y0:y1, x0:x1].astype(np.float32)
+        shape = (alpha[y0:y1, x0:x1] > 128) & (sub.max(axis=2) > 35)
+        lum = cv2.cvtColor(np.ascontiguousarray(orig[y0:y1, x0:x1]), cv2.COLOR_BGR2LAB)[..., 0].astype(np.float32) / 255.0
+        gold_px = GOLD_DEEP + (GOLD - GOLD_DEEP) * np.clip(lum * 2.2, 0, 1)[..., None]
+        region = out[y0:y1, x0:x1]
+        region[shape] = gold_px[shape]
+
+
+def process(src: Path, dst: Path, keep=(), soft=(), soft_light=(), neutral_rects=(), labels=(), arrows=(), **kw) -> None:
     im = cv2.imread(str(src), cv2.IMREAD_UNCHANGED)
     if im is None:
         raise FileNotFoundError(src)
@@ -118,8 +174,20 @@ def process(src: Path, dst: Path, keep=(), soft=(), **kw) -> None:
     out = recolor(bgr, **kw)
     for x0, y0, x1, y1 in soft:
         out[y0:y1, x0:x1] = tint(np.ascontiguousarray(bgr[y0:y1, x0:x1]))
+    for x0, y0, x1, y1 in neutral_rects:
+        # Solo los píxeles pálidos (marco exterior) pasan al modo completo; el resto conserva el recoloreo normal.
+        sub = np.ascontiguousarray(bgr[y0:y1, x0:x1])
+        sat = cv2.cvtColor(sub, cv2.COLOR_BGR2HSV)[..., 1].astype(np.float32)
+        wf = np.clip(1 - (sat - 55) / 55, 0, 1)[..., None]
+        full = recolor(sub, neutral=True, full=True).astype(np.float32)
+        out[y0:y1, x0:x1] = (out[y0:y1, x0:x1].astype(np.float32) * (1 - wf) + full * wf).astype(np.uint8)
+    for x0, y0, x1, y1 in soft_light:
+        out[y0:y1, x0:x1] = tint(np.ascontiguousarray(bgr[y0:y1, x0:x1]), dark=0.08)
     for x0, y0, x1, y1 in keep:
         out[y0:y1, x0:x1] = bgr[y0:y1, x0:x1]
+    brighten_labels(out, bgr, labels)
+    if arrows:
+        gild_arrows(out, bgr, alpha, arrows)
     if alpha is not None:
         out = np.dstack([out, alpha])
     dst.parent.mkdir(parents=True, exist_ok=True)
@@ -160,7 +228,8 @@ def main() -> None:
     process(THEMES / "classic/lobby_bg.png", OUT / "lobby_bg.png", neutral=True)
     process(THEMES / "classic/room_bg.png", OUT / "room_bg.png", neutral=True)
     process(THEMES / "classic/shop_bg.png", OUT / "shop_bg.png", neutral=True)
-    process(THEMES / "classicHD/stuff_HD1.png", OUT / "stuff_HD.png", keep=ATLAS_KEEP, soft=ATLAS_SOFT)
+    process(THEMES / "classicHD/stuff_HD1.png", OUT / "stuff_HD.png", keep=ATLAS_KEEP, soft=ATLAS_SOFT, soft_light=ATLAS_SOFT_LIGHT, neutral_rects=ATLAS_NEUTRAL,
+            labels=ATLAS_LABELS, arrows=ATLAS_ARROWS)
     # Tarjetas del selector de servidor: solo las dos primeras (online / offline);
     # las de eventos (Halloween, Navidad...) se dejan como están.
     process(THEMES.parent / "servers.png", OUT / "servers.png", keep=[(0, 142, 190, 780)], neutral=True, gold=0.5)
