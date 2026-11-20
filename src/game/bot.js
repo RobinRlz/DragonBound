@@ -37,6 +37,7 @@ module.exports = class Bot {
         this.ss_count = 0;
         this.saludo = false;
         this.is_alive = 1;
+        this.has_teleported = false; // una huida por partida, no una por bot para siempre
         //this.player.mobile = Types.MOBILE.BOOMER;
     }
 
@@ -53,7 +54,18 @@ module.exports = class Bot {
         self.room.game.checkDead();
     }
 
-   turn() {
+    // Turno del bot. Si algo falla dentro, se registra y se sigue: game.js programa el fin de turno
+    // (setPassTimeOut) justo después de llamar aquí, y una excepción que escapase se lo saltaría y
+    // dejaría la partida congelada (o, desde gamePass, tumbaría el servidor entero).
+    turn() {
+        try {
+            return this.playTurn();
+        } catch (e) {
+            console.error("[BOT] el turno de " + (this.player && this.player.game_id) + " falló; la partida sigue y el turno pasará por tiempo:", e);
+        }
+    }
+
+    playTurn() {
         var self = this;
         var time = 0;
         var type = 0;
@@ -122,7 +134,11 @@ module.exports = class Bot {
                     }
                     
                     if (self.gameserver.name !== "Holiday") {
+                        // pushBroadcastChat(mensaje, sala): antes se le pasaba solo la sala como
+                        // "mensaje", lo que lanzaba "message.serialize is not a function" y dejaba
+                        // la partida congelada (el bot nunca disparaba ni pasaba el turno).
                         self.gameserver.pushBroadcastChat(
+                            new Message.chatResponse(self, "¡Me largo de aquí! -_-", Types.CHAT_TYPE.BOT),
                             self.room
                         );
                     }
