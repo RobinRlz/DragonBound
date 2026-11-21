@@ -199,7 +199,12 @@ module.exports = class Game {
         if (this.game_endx || !this.room || this.room.game !== this) return;
         const current = this.room.turn_list && this.room.turn_list[0];
         if (!current || current.user_id !== PlayerID || account.player.is_alive !== 1) return;
-        const result = aimAssist.solve(this, account, 0);
+        // Bala elegida con /autodisparo 1|2|ss; si no se eligió, la última que disparó el jugador
+        const autoType =
+          account.player.autoShotType === 0 || account.player.autoShotType === 1 || account.player.autoShotType === 2
+            ? account.player.autoShotType
+            : aimAssist.defaultShotType(account.player);
+        const result = aimAssist.solve(this, account, autoType);
         if (!result || !result.best) {
           account.send([0, "Autodisparo: no encontré un disparo que llegue al objetivo.", "", 6]);
           return;
@@ -217,7 +222,7 @@ module.exports = class Game {
           pick.ang,
           pick.power,
           3,
-          0,
+          result.type,
           account
         );
       } catch (e) {

@@ -5222,19 +5222,44 @@ module.exports = class Commands {
             self.account.send([0, "/apuntar solo funciona durante una partida.", "", 6]);
             break;
           }
-          var typeArg = String(data[1] || "1").toLowerCase();
-          var shotType = typeArg === "2" ? 1 : typeArg === "ss" ? 2 : 0;
+          // /apuntar 1|2|ss; sin argumento usa la última bala que disparaste
+          var shotType =
+            data[1] === undefined ? aimAssist.defaultShotType(self.account.player) : aimAssist.parseShotType(data[1]);
+          if (shotType === null) {
+            self.account.send([0, "Uso: /apuntar [1|2|ss]", "", 6]);
+            break;
+          }
           var aimResult = aimAssist.solve(game_aim, self.account, shotType);
           self.account.send([0, aimAssist.describe(aimResult), "", 6]);
           break;
         }
         case "/autodisparo": {
           if (!aimAssist.isAllowed(self.account)) break;
-          self.account.player.autoShot = !self.account.player.autoShot;
+          // /autodisparo            -> activa/desactiva (usa la última bala que disparaste)
+          // /autodisparo 1|2|ss     -> activa con esa bala fija
+          // /autodisparo off        -> desactiva
+          var autoArg = data[1] === undefined ? null : String(data[1]).toLowerCase();
+          var autoType = autoArg === null ? null : aimAssist.parseShotType(autoArg);
+          if (autoArg !== null && autoArg !== "off" && autoType === null) {
+            self.account.send([0, "Uso: /autodisparo [1|2|ss|off]", "", 6]);
+            break;
+          }
+          if (autoArg === "off") self.account.player.autoShot = false;
+          else if (autoType !== null) {
+            self.account.player.autoShot = true;
+            self.account.player.autoShotType = autoType;
+          } else {
+            self.account.player.autoShot = !self.account.player.autoShot;
+            self.account.player.autoShotType = null;
+          }
           self.account.send([
             0,
             self.account.player.autoShot
-              ? "Autodisparo ACTIVADO: el servidor disparará por ti al empezar tu turno. Escribe /autodisparo para desactivarlo."
+              ? "Autodisparo ACTIVADO con " +
+                (self.account.player.autoShotType === null || self.account.player.autoShotType === undefined
+                  ? "la última bala que disparaste"
+                  : "la bala " + aimAssist.shotTypeName(self.account.player.autoShotType)) +
+                ". Cambia con /autodisparo 1, 2 o ss; apaga con /autodisparo off."
               : "Autodisparo desactivado.",
             "",
             6,

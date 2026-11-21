@@ -37,6 +37,30 @@ var TARGET_HALF_H = 18;
 var TARGET_RAISE = 18;
 var HIT_DISTANCE = 22;
 
+// El cliente NO avisa al servidor cuando cambias de bala (1, 2, SS): solo la envía al empezar a cargar la
+// barra o al disparar. Por eso el bot no puede "ver" el botón seleccionado antes de tu disparo y hay que
+// decirle qué bala usar (/apuntar 2, /autodisparo ss) o dejar que use la última que disparaste.
+var TYPE_NAMES = ["1", "2", "SS"];
+
+/** "1" -> 0, "2" -> 1, "ss" -> 2. Devuelve null si el texto no es una bala válida. */
+function parseShotType(arg) {
+  var a = String(arg === undefined || arg === null ? "" : arg).trim().toLowerCase();
+  if (a === "1") return 0;
+  if (a === "2") return 1;
+  if (a === "ss") return 2;
+  return null;
+}
+
+/** Última bala que usó el jugador (la guarda el servidor al empezar a cargar o al disparar); 1 si no hay. */
+function defaultShotType(player) {
+  var t = player && player.shotType;
+  return t === 0 || t === 1 || t === 2 ? t : 0;
+}
+
+function shotTypeName(type) {
+  return TYPE_NAMES[type] || "1";
+}
+
 function isAllowed(account) {
   return !!(account && account.player && allowedIds.indexOf(Number(account.player.user_id)) !== -1);
 }
@@ -115,6 +139,8 @@ function solve(game, account, type) {
   var me = account.player;
   var look = enemy.player.x >= me.x ? 1 : 0; // 1 = derecha, 0 = izquierda (como en gameShoot)
   type = type || 0;
+  var mobileShots = Types.MOBILES[mobileOf(account)].shoots.length;
+  if (type > mobileShots - 1) type = mobileShots - 1;
 
   var current = null;
   var myAng = Number(me.ang);
@@ -152,8 +178,8 @@ function describe(result) {
   var lines = [];
   var dir = result.look === 1 ? "derecha" : "izquierda";
   lines.push(
-    "Objetivo: " + result.enemy.name + " a " + result.enemy.distance + " px (" + dir + "). Viento " +
-      result.wind.power + " (ángulo " + result.wind.angle + ")."
+    "Bala " + shotTypeName(result.type) + " | Objetivo: " + result.enemy.name + " a " + result.enemy.distance +
+      " px (" + dir + "). Viento " + result.wind.power + " (ángulo " + result.wind.angle + ")."
   );
   var fmt = function (s) {
     var hit = s.error <= HIT_DISTANCE ? "impacto" : "queda a " + Math.round(s.error) + " px";
@@ -166,6 +192,9 @@ function describe(result) {
 }
 
 module.exports = {
+  parseShotType: parseShotType,
+  defaultShotType: defaultShotType,
+  shotTypeName: shotTypeName,
   isAllowed: isAllowed,
   solve: solve,
   describe: describe,
